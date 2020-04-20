@@ -1,0 +1,1 @@
+' ===Set Theory===' Relational Algebra has evolved from the set theory you may have experienced in school.' A '''set''' is a collection zero of more elements, where each element is unique.' * S = {A, B} is a set with the elements A and B. ' * A ε S A is an element of S' * {A} ⊂ {A,B} is a subset' * {} or Ø is an empty set.' Go to [[Tutorial 2]]

@@ -2241,20 +2241,7 @@ Protected Class Relation
 			  
 			  c = header.count-1
 			  
-			  //lines.AddRow text.join(header,",")
-			  line = ""
-			  for j= 0 to c
-			    if j > 0 then
-			      line = line + "," 
-			    end
-			    f = header(j)
-			    if labels.HasKey(f) then
-			      line = line + labels.Value(f)
-			    else
-			      line = line + f
-			    end
-			  next
-			  lines.AddRow line
+			  lines.AddRow text.join(header,",")
 			  
 			  k = tuples.Count-1
 			  
@@ -2364,12 +2351,7 @@ Protected Class Relation
 			    end
 			    redim pairs(-1)
 			    for j=0 to m
-			      if labels.HasKey(header(j)) then
-			        f = labels.value(header(j))
-			      else
-			        f = header(j)
-			      end
-			      pairs.addrow """"+f+""": """+ TextExtensions.JSONescape(tp.Value(header(j)))+""""
+			      pairs.addrow """"+header(j)+""": """+ TextExtensions.JSONescape(tp.Value(header(j)))+""""
 			    next
 			    lines.AddRow " { "+ text.join(pairs,", ")+ " } "
 			  next
@@ -2467,19 +2449,7 @@ Protected Class Relation
 			    fields.AddRow(header(i))
 			  next
 			  
-			  line = ""
-			  for j= 0 to c
-			    if j > 0 then
-			      line = line + "," 
-			    end
-			    f = header(j)
-			    if labels.HasKey(f) then
-			      line = line + labels.Value(f)
-			    else
-			      line = line + f
-			    end
-			  next
-			  lines.AddRow line
+			  lines.AddRow text.join(header,",")
 			  
 			  k = tuples.Count-1
 			  

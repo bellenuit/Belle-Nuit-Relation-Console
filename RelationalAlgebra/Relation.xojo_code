@@ -155,6 +155,7 @@ Protected Class Relation
 		  
 		  result.tuples = tuples.Clone
 		  result.Formats = formats.Clone
+		  result.labels = labels.Clone
 		  
 		  result.globals = globals
 		  result.functions = functions
@@ -177,6 +178,7 @@ Protected Class Relation
 		  
 		  tuples = new OrderedDictionary
 		  formats = new Dictionary
+		  labels = new Dictionary
 		End Sub
 	#tag EndMethod
 
@@ -629,6 +631,9 @@ Protected Class Relation
 		      if r.formats.HasKey(f) then
 		        formats.Value(f) = r.Formats.Value(f)
 		      end
+		      if r.labels.HasKey(f) then
+		        labels.Value(f) = r.labels.Value(f)
+		      end
 		    end
 		  next
 		  
@@ -846,6 +851,9 @@ Protected Class Relation
 		      if r.formats.HasKey(f) then
 		        formats.Value(f) = r.Formats.Value(f)
 		      end
+		      if r.labels.HasKey(f) then
+		        labels.Value(f) = r.labels.Value(f)
+		      end
 		    end
 		  next
 		  
@@ -987,6 +995,42 @@ Protected Class Relation
 		  
 		  tuples = newtuples
 		  
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub Label(pairs() as text)
+		  dim p as text
+		  dim i as int64
+		  dim fields() as text
+		  dim f0, f1 as text
+		  
+		  
+		  for each p in pairs
+		    fields = p.trim.split(" ")
+		    if fields.Count<2 then
+		      raise new RelationError("Invalid label",121)
+		    end
+		    f0 = fields(0).trim
+		    fields.RemoveRowAt 0
+		    f1 = Text.join(fields," ").trim.ReplaceAll("""","")
+		    i = header.indexof(f0) 
+		    if  i= -1 then
+		      raise new RelationError("Unknown label " +f0,122)
+		    end
+		    
+		    labels.Value(f0) = f1
+		    
+		  next
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub Label(t as text)
+		  dim pairs() as text
+		  pairs = t.Split(",") // commas inside label??
+		  label pairs
 		  
 		End Sub
 	#tag EndMethod
@@ -1238,7 +1282,9 @@ Protected Class Relation
 		    if formats.HasKey(fields(0).trim) then
 		      formats.Value(nc) = formats.Value(fields(0).trim)
 		    end
-		    
+		    if labels.HasKey(fields(0).trim) then
+		      labels.Value(nc) = labels.Value(fields(0).trim)
+		    end
 		    newcolumns.AddRow nc
 		  next
 		  
@@ -1860,7 +1906,19 @@ Protected Class Relation
 		  'fields.AddRow("<th>"+header(j)+"</th>")
 		  'next
 		  'line = "<tr>"+Text.join(fields," ")+"</tr>"
-		  line = "! "+Text.join(header," !! ")
+		  line = "! "
+		  for j= 0 to k
+		    if j > 0 then
+		      line = line + " !! " 
+		    end
+		    f = header(j)
+		    if labels.HasKey(f) then
+		      line = line + labels.Value(f)
+		    else
+		      line = line + f
+		    end
+		  next
+		  //line = "! "+Text.join(header," !! ")
 		  lines.AddRow("|-")
 		  lines.AddRow line
 		  
@@ -2179,10 +2237,24 @@ Protected Class Relation
 			  dim quote as text = TextExtensions.Quote
 			  dim ret as text = TextExtensions.ret
 			  dim newline as text = TextExtensions.Newline
+			  dim line as text
 			  
 			  c = header.count-1
 			  
-			  lines.AddRow text.join(header,",")
+			  //lines.AddRow text.join(header,",")
+			  line = ""
+			  for j= 0 to c
+			    if j > 0 then
+			      line = line + "," 
+			    end
+			    f = header(j)
+			    if labels.HasKey(f) then
+			      line = line + labels.Value(f)
+			    else
+			      line = line + f
+			    end
+			  next
+			  lines.AddRow line
 			  
 			  k = tuples.Count-1
 			  
@@ -2278,6 +2350,7 @@ Protected Class Relation
 			  dim dlist(-1) as Dictionary
 			  dim pairs(-1) as text
 			  dim lines(-1) as text
+			  dim f as text
 			  
 			  n = tuples.count-1
 			  m = header.Count-1
@@ -2291,7 +2364,12 @@ Protected Class Relation
 			    end
 			    redim pairs(-1)
 			    for j=0 to m
-			      pairs.addrow """"+header(j)+""": """+ TextExtensions.JSONescape(tp.Value(header(j)))+""""
+			      if labels.HasKey(header(j)) then
+			        f = labels.value(header(j))
+			      else
+			        f = header(j)
+			      end
+			      pairs.addrow """"+f+""": """+ TextExtensions.JSONescape(tp.Value(header(j)))+""""
 			    next
 			    lines.AddRow " { "+ text.join(pairs,", ")+ " } "
 			  next
@@ -2359,6 +2437,10 @@ Protected Class Relation
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h0
+		labels As Dictionary
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		locals As Dictionary
 	#tag EndProperty
 
@@ -2384,7 +2466,19 @@ Protected Class Relation
 			  for i = 0 to c
 			    fields.AddRow(header(i))
 			  next
-			  line = Text.join(fields,Tab)
+			  
+			  line = ""
+			  for j= 0 to c
+			    if j > 0 then
+			      line = line + "," 
+			    end
+			    f = header(j)
+			    if labels.HasKey(f) then
+			      line = line + labels.Value(f)
+			    else
+			      line = line + f
+			    end
+			  next
 			  lines.AddRow line
 			  
 			  k = tuples.Count-1

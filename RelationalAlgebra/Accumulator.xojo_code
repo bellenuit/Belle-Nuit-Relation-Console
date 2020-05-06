@@ -179,7 +179,7 @@ Protected Class Accumulator
 		  if list.count mod 2 <> 0 then
 		    v = list((list.count-1)/2)
 		  else
-		    v = list(list.count/2-2)
+		    v = list(list.count/2-1)
 		  end
 		  
 		  return v

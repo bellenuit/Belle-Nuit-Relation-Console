@@ -507,6 +507,14 @@ Implements RelationNotifier
 		        stack.AddRow r2
 		        
 		      end
+		    case "label"
+		      if ubound(stack) < 0 then
+		        result = result + ptagerror+ti+" Error : Stack empty"+ptag2
+		        errors.Append il
+		      else
+		        r = stack(UBound(stack))
+		        r.label(body)
+		      end
 		    case "limit"
 		      if ubound(stack) < 0 then
 		        result = result + ptagerror+ti+" Error : Stack empty"+ptag2
@@ -761,7 +769,7 @@ Implements RelationNotifier
 		      body = Text.Join(fields," ")
 		      if programs.HasKey(key) then
 		        tx = programs.value(key)
-		        result = run(tx,key,body) // result is property 
+		        result = result + run(tx,key,body) // result is property 
 		      else
 		        result = result + ptagerror+ti+" Error : Program not defined "+key+ptag2
 		        errors.Append il
@@ -860,6 +868,7 @@ Implements RelationNotifier
 		          end
 		          
 		        end
+		        stack.AddRow r
 		      end
 		    case "union"
 		      if ubound(stack) < 1 then

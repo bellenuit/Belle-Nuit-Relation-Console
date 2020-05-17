@@ -450,30 +450,79 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Import(value as text)
+		Sub Import(value as text, fn as text = "")
 		  // imports all into one column
 		  dim s as text
 		  dim tp as tuple
-		  dim d as Dictionary
+		  dim d,d2 as Dictionary
 		  dim lines(-1) as text
 		  dim l as text
+		  dim ext as text
+		  dim i as int64
+		  dim js as JSONItem
+		  dim xl as XmlDocument
+		  dim c1,c2 as text
 		  
-		  l = "lines"
+		  if fn.Right(5) = ".json" then
+		    redim header(-1)
+		    c1 = "path"
+		    c2 = "text"
+		    header.AddRow c1
+		    header.AddRow c2
+		    
+		    js = new JSONItem(value)
+		    d2 = ImportFlatJSON(js,"")
+		    d2 = d2
+		    for each de as DictionaryEntry in d2
+		      d = new Dictionary
+		      d.Value(c1)=str(de.key).totext
+		      d.Value(c2)= str(de.value).totext
+		      tp = new tuple(d)
+		      tuples.setvalue tp.Hash, tp
+		    next
+		    
+		  elseif fn.Right(4) = ".xml" then
+		    redim header(-1)
+		    c1 = "path"
+		    c2 = "text"
+		    header.AddRow c1
+		    header.AddRow c2
+		    
+		    xl = new XMLDocument(value)
+		    d2 = ImportFlatXML(xl,"")
+		    d2 = d2
+		    for each de as DictionaryEntry in d2
+		      d = new Dictionary
+		      d.Value(c1)=str(de.key).totext
+		      d.Value(c2)= str(de.value).totext
+		      tp = new tuple(d)
+		      tuples.setvalue tp.Hash, tp
+		    next
+		    
+		  else
+		    redim header(-1)
+		    c1 = "line"
+		    c2 = "text"
+		    header.AddRow c1
+		    header.AddRow c2
+		    
+		    s = value.ReplaceAll(TextExtensions.Ret+TextExtensions.Newline,TextExtensions.Newline)
+		    s = s.ReplaceAll(TextExtensions.Ret,TextExtensions.Newline)
+		    lines =s.Split(TextExtensions.Newline)
+		    
+		    i=0
+		    for each line as text in lines
+		      i = i+1
+		      d = new Dictionary
+		      d.Value(c1)=line
+		      d.Value(c2)= i.ToText
+		      tp = new tuple(d)
+		      tuples.setvalue tp.Hash, tp
+		    next
+		  end if
 		  
-		  s = value.ReplaceAll(TextExtensions.Ret+TextExtensions.Newline,TextExtensions.Newline)
-		  s = s.ReplaceAll(TextExtensions.Ret,TextExtensions.Newline)
 		  
-		  lines =s.Split(TextExtensions.Newline)
 		  
-		  redim header(-1)
-		  header.AddRow l
-		  
-		  for each line as text in lines
-		    d = new Dictionary
-		    d.Value(l)=line
-		    tp = new tuple(d)
-		    tuples.setvalue tp.Hash, tp
-		  next
 		End Sub
 	#tag EndMethod
 

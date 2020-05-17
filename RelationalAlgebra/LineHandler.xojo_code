@@ -410,7 +410,7 @@ Implements RelationNotifier
 		          tx = tip.ReadAll.ToText
 		          if tx<>"" then
 		            r = new Relation("")
-		            r.import(tx)
+		            r.import(tx,tn)
 		            stack.AddRow r
 		          else
 		            result = result + ptagerror+ti+" Error : Empty file "+tn+ptag2

@@ -11,7 +11,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h21
 		Private Sub Compile()
 		  dim i,c,il,j,k as int64
-		  dim ti, line, command, command2, body,f as text
+		  dim ti, line, command, command2, body,f,rest,eq as text
 		  dim fields(-1) as text
 		  dim fl as text
 		  dim conditioncount as int64
@@ -76,6 +76,13 @@ Inherits XPFunction
 		        raise new XPError("Set empty field #"+ti,321)
 		      end
 		      fields.RemoveRowAt 0
+		      rest = Text.join(fields," ").trim
+		      fields = rest.split(" ")
+		      eq = fields(0)
+		      if eq <> "=" then
+		        raise new XPError("Init missing =",601)
+		      end
+		      fields.RemoveRowAt 0
 		      body = Text.Join(fields," ")
 		      xp = new XPEvaluator
 		      xp.Compile(body)
@@ -91,12 +98,13 @@ Inherits XPFunction
 		        raise new XPError("Set empty field #"+ti,321)
 		      end
 		      fields.RemoveRowAt 0
-		      body = Text.join(fields," ").trim
-		      fields = body.split(" ")
-		      if fields(0) <> "=" then
+		      rest = Text.join(fields," ").trim
+		      fields = rest.split(" ")
+		      eq = fields(0)
+		      if eq <> "=" then
 		        raise new XPError("Set missing =",601)
 		      end
-		      fields.Remove 0
+		      fields.RemoveRowAt 0
 		      body = Text.join(fields," ").trim
 		      if body <> "" then
 		        xp = new XPEvaluator
@@ -351,22 +359,6 @@ Inherits XPFunction
 
 
 	#tag ViewBehavior
-		#tag ViewProperty
-			Name="label"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="text"
-			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="arity"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="int64"
-			EditorType=""
-		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true

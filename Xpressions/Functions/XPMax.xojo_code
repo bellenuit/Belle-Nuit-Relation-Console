@@ -23,7 +23,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 2
-		  label = "_max"
+		  label = ":max"
 		End Sub
 	#tag EndMethod
 

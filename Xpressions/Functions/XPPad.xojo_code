@@ -34,7 +34,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 2
-		  label = "_pad"
+		  label = ":pad"
 		End Sub
 	#tag EndMethod
 

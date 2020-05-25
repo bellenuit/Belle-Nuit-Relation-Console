@@ -343,13 +343,25 @@ Protected Class Relation
 
 	#tag Method, Flags = &h0
 		Sub Extend(t as text)
-		  dim list(), first, rest as text
+		  dim list(), first, rest, eq as text
 		  list = t.split(" ")
 		  
 		  first = list(0)
 		  list.Remove 0
 		  
-		  rest = Text.join(list," ")
+		  rest = Text.join(list," ").trim
+		  
+		  list = rest.split(" ")
+		  
+		  eq = list(0)
+		  
+		  if eq <> "=" then
+		    raise new XPError("Extend missing =",601)
+		  end
+		  
+		  list.Remove 0
+		  
+		  rest = Text.join(list," ").trim
 		  
 		  Extend first, rest
 		End Sub
@@ -365,6 +377,10 @@ Protected Class Relation
 		  dim i, c as int64
 		  dim a as auto
 		  const rownumberlabel as text = "rownumber"
+		  
+		  if header.IndexOf(label) > -1 then
+		    raise new XPError("Extend column exists already",601)
+		  end
 		  
 		  AddColumn(label)
 		  
@@ -383,7 +399,7 @@ Protected Class Relation
 		    if a isa tuple then
 		      d = tuple(a).Fields
 		    else
-		      raise new XPError("Select Illegal tuple",601)
+		      raise new XPError("Extend Illegal tuple",601)
 		    end
 		    locals.Value(rownumberlabel) = str(i+1).totext
 		    v = xp.evaluate(d,globals,locals)
@@ -458,7 +474,7 @@ Protected Class Relation
 		  dim lines(-1) as text
 		  dim l as text
 		  dim ext as text
-		  dim i as int64
+		  dim i,c as int64
 		  dim js as JSONItem
 		  dim xl as XmlDocument
 		  dim c1,c2 as text
@@ -498,6 +514,25 @@ Protected Class Relation
 		      tp = new tuple(d)
 		      tuples.setvalue tp.Hash, tp
 		    next
+		    
+		  elseif fn.Right(5) = ".wiki" then
+		    d2 = ImportWikifields(value)
+		    
+		    c = d2.keycount-1
+		    
+		    if c >=0 then
+		      d = d2.Value(0)
+		      redim header(-1)
+		      for each key as text in d.keys
+		        header.AddRow key
+		      next
+		      
+		      for i = 0 to c
+		        d = d2.value(i)
+		        tp = new tuple(d)
+		        tuples.setvalue tp.Hash, tp
+		      next
+		    end
 		    
 		  else
 		    redim header(-1)
@@ -2213,33 +2248,91 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub Update(t as text)
+		  dim list(), first, rest, eq, cond, silentquote as text
+		  dim p as integer
+		  
+		  list = t.split(" ")
+		  
+		  first = list(0)
+		  list.Remove 0
+		  
+		  rest = Text.join(list," ").trim
+		  
+		  list = rest.split(" ")
+		  
+		  eq = list(0)
+		  
+		  if eq <> "=" then
+		    raise new XPError("Extend missing =",601)
+		  end
+		  
+		  list.Remove 0
+		  
+		  rest = Text.join(list," ").trim
+		  
+		  p = rest.IndexOf(" where ")
+		  
+		  if p>-1 then
+		    update rest.mid(p+len(" where ")), first, rest.left(p)
+		  else
+		    update "1", first, rest
+		  end
+		  
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub Update(condition as text, label as text, expression as text)
-		  dim xp as XPEvaluator
-		  dim d as Dictionary
-		  dim v as text
+		  dim xp, xpc as XPEvaluator
+		  dim d as dictionary
+		  dim v as Text
+		  dim newtuples as new OrderedDictionary
+		  dim tp as tuple
+		  dim i, c as int64
+		  dim a as auto
+		  const rownumberlabel as text = "rownumber"
+		  
+		  if header.IndexOf(label) = -1 then
+		    raise new XPError("Update column does not exist",601)
+		  end
+		  
 		  
 		  xp = new XPEvaluator(functions)
-		  xp.Compile(condition)
+		  xp.Compile(expression)
 		  
-		  For Each t As OrderedDictionaryEntry In tuples
-		    d = tuple(t.value).fields
-		    
-		    if not d.HasKey(label) then
-		      raise new RelationError("Invalid update column",104)
+		  xpc = new XPEvaluator(functions)
+		  xpc.compile(condition)
+		  
+		  c = tuples.Count-1
+		  
+		  for i = 0 to c
+		    if Notifier <> nil then
+		      if c>4000 and i mod 4000 = 0 then
+		        Notifier.SetMessage(i*100/(c+1))
+		      end
 		    end
-		    
-		    if xp.Evaluate(d) <> "0" then
-		      tuples.Remove(t.Key)
-		      
-		      v = xp.Evaluate(d)
-		      
+		    a = tuples.value(i)
+		    if a isa tuple then
+		      d = tuple(a).Fields
+		    else
+		      raise new XPError("Update Illegal tuple",601)
+		    end
+		    if xpc.Evaluate(d,globals,locals) = "1" then
+		      locals.Value(rownumberlabel) = str(i+1).totext
+		      v = xp.evaluate(d,globals,locals)
 		      d.value(label) = v
-		      
-		    end
+		      tp = new tuple(d)
+		    else
+		      tp = tuple(a)
+		    end if
 		    
+		    newtuples.setvalue tp.hash, tp
 		  next
 		  
-		  
+		  tuples = newtuples
+		  Notifier = nil
 		  
 		End Sub
 	#tag EndMethod
@@ -2250,7 +2343,7 @@ Protected Class Relation
 		  dim ch as text
 		  
 		  select case t.left(1)
-		  case "A" to "Z", "a" to "z"
+		  case "A" to "Z", "a" to "z","_"
 		  else
 		    return false
 		  end

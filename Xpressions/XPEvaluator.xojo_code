@@ -50,11 +50,11 @@ Protected Class XPEvaluator
 		        end
 		        e = operatorStack.pop
 		        if left(e,2) = "@(" then
-		          fn = "_" +e.mid(2)
-		          if fn<>"_comma" then
+		          fn = ":" +e.mid(2)
+		          if fn<>":comma" then
 		            rpn.AddRow fn
 		          end
-		        elseif e <> "(" and e<>"1" and e<>"_comma" and val(e) = 0 then 
+		        elseif e <> "(" and e<>"1" and e<>":comma" and val(e) = 0 then 
 		          rpn.AddRow e
 		        end
 		      loop until left(e,2) = "@(" or e = "(" 
@@ -73,16 +73,16 @@ Protected Class XPEvaluator
 		              operatorStack.AddRow e
 		            end
 		          end
-		          if op.functionlabel = "_and" then
+		          if op.functionlabel = ":and" then
 		            rvi = rv.InRange(50000,80000)
 		            rpn.AddRow str(rvi).totext
-		            rpn.AddRow "_andleft"
-		            operatorStack.AddRow "_andright#"+str(rvi).totext
-		          elseif op.functionlabel = "_or" then
+		            rpn.AddRow ":andleft"
+		            operatorStack.AddRow ":andright#"+str(rvi).totext
+		          elseif op.functionlabel = ":or" then
 		            rvi = rv.InRange(50000,80000)
 		            rpn.AddRow str(rvi).totext
-		            rpn.AddRow "_orleft"
-		            operatorStack.AddRow "_orright#"+str(rvi).totext
+		            rpn.AddRow ":orleft"
+		            operatorStack.AddRow ":orright#"+str(rvi).totext
 		          else
 		            operatorStack.AddRow op.functionlabel
 		          end
@@ -101,18 +101,18 @@ Protected Class XPEvaluator
 		    e = operatorStack.pop
 		    e = operatorStack.pop
 		    if e<>"@(comma" then
-		      rpn.AddRow e.Replace("@(","_")
+		      rpn.AddRow e.Replace("@(",":")
 		    end
 		  wend
 		  c = rpn.Count-1
 		  for i = c downto 0
-		    if rpn(i).length > 9 and rpn(i).left(9) = "_andright" then
+		    if rpn(i).length > 9 and rpn(i).left(9) = ":andright" then
 		      rpn.AddRowat i+1, rpn(i).mid(9)
-		      rpn(i) = "_andright"
+		      rpn(i) = ":andright"
 		    end
-		    if rpn(i).length > 8 and rpn(i).left(8) = "_orright" then
+		    if rpn(i).length > 8 and rpn(i).left(8) = ":orright" then
 		      rpn.AddRowat i+1, rpn(i).mid(8)
-		      rpn(i) = "_orright"
+		      rpn(i) = ":orright"
 		    end
 		  next
 		  
@@ -124,38 +124,38 @@ Protected Class XPEvaluator
 
 	#tag Method, Flags = &h0
 		Sub Constructor()
-		  operators.AddRow new XPOperator("-u", "_neg",1,11,"L")
-		  operators.AddRow new XPOperator("not", "_not",1,100,"L")
+		  operators.AddRow new XPOperator("-u", ":neg",1,11,"L")
+		  operators.AddRow new XPOperator("not", ":not",1,100,"L")
 		  
-		  operators.AddRow new XPOperator("/", "_div",2,9,"L")
-		  operators.AddRow new XPOperator("*", "_mul",2,9,"L")
-		  operators.AddRow new XPOperator("div", "_idiv",2,9,"L")
-		  operators.AddRow new XPOperator("mod", "_mod",2,9,"L")
-		  operators.AddRow new XPOperator("+", "_add",2,8,"L")
-		  operators.AddRow new XPOperator("-", "_sub",2,8,"L")
+		  operators.AddRow new XPOperator("/", ":div",2,9,"L")
+		  operators.AddRow new XPOperator("*", ":mul",2,9,"L")
+		  operators.AddRow new XPOperator("div", ":div",2,9,"L")
+		  operators.AddRow new XPOperator("mod", ":mod",2,9,"L")
+		  operators.AddRow new XPOperator("+", ":add",2,8,"L")
+		  operators.AddRow new XPOperator("-", ":sub",2,8,"L")
 		  
-		  operators.AddRow new XPOperator(".", "_concat",2,7,"L")
+		  operators.AddRow new XPOperator(".", ":concat",2,7,"L")
 		  
-		  operators.AddRow new XPOperator("=", "_eqn",2,6,"L")
-		  operators.AddRow new XPOperator("!=", "_nen",2,6,"L")
-		  operators.AddRow new XPOperator(">", "_gtn",2,6,"L")
-		  operators.AddRow new XPOperator(">=", "_gen",2,6,"L")
-		  operators.AddRow new XPOperator("<", "_ltn",2,6,"L")
-		  operators.AddRow new XPOperator("<=", "_len",2,6,"L")
+		  operators.AddRow new XPOperator("=", ":eqn",2,6,"L")
+		  operators.AddRow new XPOperator("!=", ":nen",2,6,"L")
+		  operators.AddRow new XPOperator(">", ":gtn",2,6,"L")
+		  operators.AddRow new XPOperator(">=", ":gen",2,6,"L")
+		  operators.AddRow new XPOperator("<", ":ltn",2,6,"L")
+		  operators.AddRow new XPOperator("<=", ":len",2,6,"L")
 		  
-		  operators.AddRow new XPOperator("regex", "_regex",2,5,"L")
-		  operators.AddRow new XPOperator("==", "_eqs",2,5,"L")
-		  operators.AddRow new XPOperator("!==", "_nes",2,5,"L")
-		  operators.AddRow new XPOperator(">>", "_gts",2,5,"L")
-		  operators.AddRow new XPOperator(">==", "_ges",2,5,"L")
-		  operators.AddRow new XPOperator("<<", "_lts",2,5,"L")
-		  operators.AddRow new XPOperator("<==", "_les",2,5,"L")
+		  operators.AddRow new XPOperator("regex", ":regex",2,5,"L")
+		  operators.AddRow new XPOperator("==", ":eqs",2,5,"L")
+		  operators.AddRow new XPOperator("!==", ":nes",2,5,"L")
+		  operators.AddRow new XPOperator(">>", ":gts",2,5,"L")
+		  operators.AddRow new XPOperator(">==", ":ges",2,5,"L")
+		  operators.AddRow new XPOperator("<<", ":lts",2,5,"L")
+		  operators.AddRow new XPOperator("<==", ":les",2,5,"L")
 		  
-		  operators.AddRow new XPOperator("and", "_and",2,4,"L")
-		  operators.AddRow new XPOperator("or", "_or",2,3,"L")
-		  operators.AddRow new XPOperator("xor", "_xor",2,2,"L")
+		  operators.AddRow new XPOperator("and", ":and",2,4,"L")
+		  operators.AddRow new XPOperator("or", ":or",2,3,"L")
+		  operators.AddRow new XPOperator("xor", ":xor",2,2,"L")
 		  
-		  operators.AddRow new XPOperator(",","_comma",2,1,"L")
+		  operators.AddRow new XPOperator(",",":comma",2,1,"L")
 		  
 		  functions.AddRow new XPNeg
 		  functions.AddRow new XPNot
@@ -226,7 +226,7 @@ Protected Class XPEvaluator
 		  
 		  expectedreturn = 1
 		  
-		  'UnitTest
+		  
 		  
 		End Sub
 	#tag EndMethod
@@ -300,10 +300,10 @@ Protected Class XPEvaluator
 		    ch = e.left(1)
 		    
 		    select case ch
-		    case "_"
+		    case ":"
 		      found = false
 		      select case e
-		      case "_andleft"
+		      case ":andleft"
 		        jump = "#"+stack.pop
 		        cond = stack.pop
 		        if val(cond)=0 then
@@ -316,7 +316,7 @@ Protected Class XPEvaluator
 		          end
 		        end
 		        found = true
-		      case "_andright"
+		      case ":andright"
 		        cond = stack.pop
 		        if val(cond)=0 then
 		          stack.AddRow "0"
@@ -325,7 +325,7 @@ Protected Class XPEvaluator
 		        end
 		        found = true
 		        
-		      case "_init" 
+		      case ":init" 
 		        if localdict.HasKey(aggregatorfirstrun) then
 		          if  localdict.value(aggregatorfirstrun) <> "0" then
 		            localdict.Value(currentlabel) = stack.pop
@@ -338,7 +338,7 @@ Protected Class XPEvaluator
 		        found = true
 		        
 		        
-		      case "_goto"
+		      case ":goto"
 		        jump = "#"+stack.pop
 		        j = rpn.IndexOf(jump)
 		        if  j > -1 then
@@ -348,7 +348,7 @@ Protected Class XPEvaluator
 		        end
 		        found = true
 		        found = true
-		      case "_gotoifn"
+		      case ":gotoifn"
 		        jump = "#"+stack.pop
 		        cond = stack.pop
 		        if cond = "0" then
@@ -360,7 +360,7 @@ Protected Class XPEvaluator
 		          end
 		        end
 		        found = true
-		      case "_gotoif"
+		      case ":gotoif"
 		        jump = "#"+stack.pop
 		        cond = stack.pop
 		        if cond <> "0" then
@@ -372,7 +372,7 @@ Protected Class XPEvaluator
 		          end
 		        end
 		        found = true
-		      case "_orleft"
+		      case ":orleft"
 		        jump = "#"+stack.pop
 		        cond = stack.pop
 		        if val(cond)<>0 then
@@ -385,7 +385,7 @@ Protected Class XPEvaluator
 		          end
 		        end
 		        found = true
-		      case "_orright"
+		      case ":orright"
 		        cond = stack.pop
 		        if val(cond)=0 then
 		          stack.AddRow "0"
@@ -393,13 +393,13 @@ Protected Class XPEvaluator
 		          stack.AddRow "1"
 		        end
 		        found = true
-		      case "_pop"
+		      case ":pop"
 		        dummy = stack.pop
 		        found = true
-		      case "_set" 
+		      case ":set" 
 		        localdict.Value(currentlabel) = stack.pop
 		        found = true
-		      case "_stackcount"
+		      case ":stackcount"
 		        stack.AddRow str(stack.count).ToText
 		        found = true
 		      else
@@ -496,7 +496,7 @@ Protected Class XPEvaluator
 		      case "0" to "9"
 		        state = "number"
 		        acc = ch
-		      case "A" to "Z", "a" to "z"
+		      case "A" to "Z", "a" to "z","_"
 		        state = "name"
 		        acc = ch
 		      case "("
@@ -724,112 +724,112 @@ Protected Class XPEvaluator
 		  dim results() as text
 		  
 		  tests.AddRow "a+b"
-		  comps.AddRow "a b _add"
+		  comps.AddRow "a b :add"
 		  results.AddRow "76"
 		  
 		  tests.AddRow "5+10"
-		  comps.AddRow "5 10 _add"
+		  comps.AddRow "5 10 :add"
 		  results.AddRow "15"
 		  
 		  tests.AddRow "5*10"
-		  comps.AddRow "5 10 _mul"
+		  comps.AddRow "5 10 :mul"
 		  results.AddRow "50"
 		  
 		  tests.AddRow "5/10"
-		  comps.AddRow "5 10 _div"
+		  comps.AddRow "5 10 :div"
 		  results.AddRow "0.5"
 		  
 		  tests.AddRow "2 + 4 +10"
-		  comps.AddRow "2 4 _add 10 _add"
+		  comps.AddRow "2 4 :add 10 :add"
 		  results.AddRow "16"
 		  
 		  tests.AddRow "2 - 4 +10"
-		  comps.AddRow "2 4 _sub 10 _add"
+		  comps.AddRow "2 4 :sub 10 :add"
 		  results.AddRow "8"
 		  
 		  tests.AddRow "2 + 4 -10"
-		  comps.AddRow "2 4 _add 10 _sub"
+		  comps.AddRow "2 4 :add 10 :sub"
 		  results.AddRow "-4"
 		  
 		  tests.AddRow "2 + 4 * 10"
-		  comps.AddRow "2 4 10 _mul _add"
+		  comps.AddRow "2 4 10 :mul :add"
 		  results.AddRow "42"
 		  
 		  tests.AddRow "-5 +10"
-		  comps.AddRow "5 _neg 10 _add"
+		  comps.AddRow "5 :neg 10 :add"
 		  results.AddRow "5"
 		  
 		  tests.AddRow "5 * -10"
-		  comps.AddRow "5 10 _neg _mul"
+		  comps.AddRow "5 10 :neg :mul"
 		  results.AddRow "-50"
 		  
 		  tests.AddRow "5 +-10"
-		  comps.AddRow "5 10 _neg _add"
+		  comps.AddRow "5 10 :neg :add"
 		  results.AddRow "-5"
 		  
 		  tests.AddRow "2 * 4 +10"
-		  comps.AddRow "2 4 _mul 10 _add"
+		  comps.AddRow "2 4 :mul 10 :add"
 		  results.AddRow "18"
 		  
 		  tests.AddRow "2 * (4 +10)"
-		  comps.AddRow "2 4 10 _add _mul"
+		  comps.AddRow "2 4 10 :add :mul"
 		  results.AddRow "28"
 		  
 		  tests.AddRow "a/c"
-		  comps.AddRow "a c _div"
+		  comps.AddRow "a c :div"
 		  results.AddRow "0.55"
 		  
 		  tests.AddRow "a/c"
-		  comps.AddRow "a c _div"
+		  comps.AddRow "a c :div"
 		  results.AddRow "0.55"
 		  
 		  tests.AddRow "d+e"
-		  comps.AddRow "d e _add"
+		  comps.AddRow "d e :add"
 		  results.AddRow "0"
 		  
 		  tests.AddRow "d.e"
-		  comps.AddRow "d e _concat"
+		  comps.AddRow "d e :concat"
 		  results.AddRow "asdfjklö"
 		  
 		  tests.AddRow "sqrt(16)"
-		  comps.AddRow "16 _sqrt"
+		  comps.AddRow "16 :sqrt"
 		  results.AddRow "4"
 		  
 		  tests.AddRow "pow(2,3)"
-		  comps.AddRow "2 3 _pow"
+		  comps.AddRow "2 3 :pow"
 		  results.AddRow "8"
 		  
 		  tests.AddRow "pow(3+1,3)"
-		  comps.AddRow "3 1 _add 3 _pow"
+		  comps.AddRow "3 1 :add 3 :pow"
 		  results.AddRow "64"
 		  
 		  
 		  tests.AddRow "replace(d.e,""sd"",""sbb"")"
-		  comps.AddRow "d e _concat $sd $sbb _replace"
+		  comps.AddRow "d e :concat $sd :comma $sbb :replace"
 		  results.AddRow "asbbfjklö"
 		  
 		  tests.AddRow "100 * (5+pow(3+1,3)) / 10000"
-		  comps.AddRow "100 5 3 1 _add 3 _pow _add _mul 10000 _div"
+		  comps.AddRow "100 5 3 1 :add 3 :pow :add :mul 10000 :div"
 		  results.AddRow "0.69"
 		  
 		  tests.addrow " ""lorem ipsum"" . ""RRR"" "
-		  comps.AddRow "$lorem ipsum $RRR _concat"
+		  comps.AddRow "$lorem ipsum $RRR :concat"
 		  results.AddRow "lorem ipsumRRR"
 		  
 		  tests.AddRow "sqrt(5+4)"
-		  comps.AddRow "5 4 _add _sqrt"
+		  comps.AddRow "5 4 :add :sqrt"
 		  results.AddRow "3"
 		  
 		  tests.AddRow "sqrt(5 + 4)"
-		  comps.AddRow "5 4 _add _sqrt"
+		  comps.AddRow "5 4 :add :sqrt"
 		  results.AddRow "3"
 		  
 		  tests.AddRow "2 * (3 + 4)"
-		  comps.AddRow "2 3 4 _add _mul"
+		  comps.AddRow "2 3 4 :add :mul"
 		  results.AddRow "14"
 		  
 		  'tests.AddRow "2 * 3 +"
-		  'comps.AddRow "2 3 _mul _add"
+		  'comps.AddRow "2 3 :mul :add"
 		  'results.AddRow "ERROR: stack <2"
 		  '
 		  'tests.AddRow " ""lorem ipsum"
@@ -837,23 +837,23 @@ Protected Class XPEvaluator
 		  'results.AddRow ""
 		  
 		  tests.AddRow "pow(3+1,3)"
-		  comps.AddRow "3 1 _add 3 _pow"
+		  comps.AddRow "3 1 :add 3 :pow"
 		  results.AddRow "64"
 		  
 		  tests.AddRow "(67 + 45 - 66 + 2)"
-		  comps.AddRow "67 45 _add 66 _sub 2 _add"
+		  comps.AddRow "67 45 :add 66 :sub 2 :add"
 		  results.AddRow "48"
 		  
 		  tests.AddRow "(67 + 2 * 3 - 67 + 2/1 - 7)"
-		  comps.AddRow "67 2 3 _mul 67 _sub 2 1 _div 7 _sub _add _add"
+		  comps.AddRow "67 2 3 :mul 67 :sub 2 1 :div 7 :sub :add :add"
 		  results.AddRow "1"
 		  
 		  tests.AddRow "(2) + (17*2-30) * (5)+2 - (8/2)*4"
-		  comps.AddRow "2 17 2 _mul 30 _sub 5 _mul 2 _add 8 2 _div 4 _mul _sub _add"
+		  comps.AddRow "2 17 2 :mul 30 :sub 5 :mul 2 :add 8 2 :div 4 :mul :sub :add"
 		  results.AddRow "8"
 		  
 		  'tests.AddRow "(5*7/5) + (23) - 5 * (98-4)/(6*7-42)"
-		  'comps.AddRow "5 7 _mul 5 _div 23 _add 5 98 4 _sub _mul 6 7 _mul 42 _sub _div _sub"
+		  'comps.AddRow "5 7 :mul 5 :div 23 :add 5 98 4 :sub :mul 6 7 :mul 42 :sub :div :sub"
 		  'results.AddRow "ERROR: div/0"
 		  
 		  tests.AddRow "(((((5)))))"
@@ -861,41 +861,41 @@ Protected Class XPEvaluator
 		  results.AddRow "5"
 		  
 		  tests.AddRow "((((2)) + 4))*((5))"
-		  comps.AddRow "2 4 _add 5 _mul"
+		  comps.AddRow "2 4 :add 5 :mul"
 		  results.AddRow "30"
 		  
 		  tests.AddRow "550 > 100"
-		  comps.AddRow "550 100 _gtn"
+		  comps.AddRow "550 100 :gtn"
 		  results.AddRow "1"
 		  
 		  tests.AddRow "a*b > c"
-		  comps.AddRow "a b _mul c _gtn"
+		  comps.AddRow "a b :mul c :gtn"
 		  results.AddRow "1"
 		  
 		  
 		  
 		  tests.AddRow "a*d > c"
-		  comps.AddRow "a d _mul c _gtn"
+		  comps.AddRow "a d :mul c :gtn"
 		  results.AddRow "0"
 		  
 		  tests.AddRow "d < e"
-		  comps.AddRow "d e _ltn"
+		  comps.AddRow "d e :ltn"
 		  results.AddRow "0"
 		  
 		  tests.AddRow "d << e"
-		  comps.AddRow "d e _lts"
+		  comps.AddRow "d e :lts"
 		  results.AddRow "1"
 		  
 		  tests.AddRow "-(5)"
-		  comps.AddRow "5 _neg"
+		  comps.AddRow "5 :neg"
 		  results.AddRow "-5"
 		  
 		  tests.AddRow "d regex ""s.f"" "
-		  comps.AddRow "d $s.f _regex"
+		  comps.AddRow "d $s.f :regex"
 		  results.AddRow "1"
 		  
 		  tests.AddRow "d regex ""s..f"""
-		  comps.AddRow "d $s..f _regex"
+		  comps.AddRow "d $s..f :regex"
 		  results.AddRow "0"
 		  
 		  

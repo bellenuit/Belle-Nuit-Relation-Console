@@ -54,7 +54,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 3
-		  label = "_substr"
+		  label = ":substr"
 		End Sub
 	#tag EndMethod
 

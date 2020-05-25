@@ -25,7 +25,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 2
-		  label = "_eqn"
+		  label = ":eqn"
 		End Sub
 	#tag EndMethod
 

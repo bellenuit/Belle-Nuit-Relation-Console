@@ -17,7 +17,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 0
-		  label = "_rnd"
+		  label = ":rnd"
 		End Sub
 	#tag EndMethod
 

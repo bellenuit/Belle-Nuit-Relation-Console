@@ -19,7 +19,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 1
-		  label = "_sin"
+		  label = ":sin"
 		End Sub
 	#tag EndMethod
 

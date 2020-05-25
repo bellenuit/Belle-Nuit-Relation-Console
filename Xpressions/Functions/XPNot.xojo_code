@@ -5,8 +5,8 @@ Inherits XPFunction
 		Sub pRun(byref stack() as text)
 		  dim a as text
 		  
-		  if ubound(stack)<1 then
-		    raise new xperror("stack <1",101)
+		  if ubound(stack)<0 then
+		    raise new xperror("stack <0",101)
 		  end
 		  
 		  a = stack.Pop
@@ -25,7 +25,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 1
-		  label = "_not"
+		  label = ":not"
 		End Sub
 	#tag EndMethod
 

@@ -41,7 +41,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 1
-		  label = "_urltext"
+		  label = ":urltext"
 		End Sub
 	#tag EndMethod
 

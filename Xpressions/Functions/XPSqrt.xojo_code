@@ -25,7 +25,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 1
-		  label = "_sqrt"
+		  label = ":sqrt"
 		End Sub
 	#tag EndMethod
 

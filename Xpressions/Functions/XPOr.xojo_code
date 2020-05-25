@@ -25,7 +25,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 2
-		  label = "_or"
+		  label = ":or"
 		End Sub
 	#tag EndMethod
 

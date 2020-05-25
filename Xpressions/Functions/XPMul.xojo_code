@@ -20,7 +20,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 2
-		  label = "_mul"
+		  label = ":mul"
 		End Sub
 	#tag EndMethod
 

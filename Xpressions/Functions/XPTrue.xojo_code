@@ -15,7 +15,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 0
-		  label = "_true"
+		  label = ":true"
 		End Sub
 	#tag EndMethod
 

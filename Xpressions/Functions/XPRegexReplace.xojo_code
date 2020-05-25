@@ -26,7 +26,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 3
-		  label = "_regexreplace"
+		  label = ":regexreplace"
 		End Sub
 	#tag EndMethod
 

@@ -20,7 +20,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 2
-		  label = "_concat"
+		  label = ":concat"
 		End Sub
 	#tag EndMethod
 

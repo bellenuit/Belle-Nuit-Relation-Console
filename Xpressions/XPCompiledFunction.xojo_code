@@ -28,14 +28,14 @@ Inherits XPFunction
 		  if isAggregator then
 		    compiledlines.append "1"
 		    compiledlines.append "/aggregatorfirstrun"
-		    compiledlines.append "_set"
+		    compiledlines.append ":set"
 		    
 		    compiledlines.append "#190000"
-		    compiledlines.append"_stackcount"
-		    compiledlines.append"190001"
-		    compiledlines.append "_gotoifn"
+		    compiledlines.append ":stackcount"
+		    compiledlines.append "190001"
+		    compiledlines.append ":gotoifn"
 		    compiledlines.append "/elem"
-		    compiledlines.append "_set"
+		    compiledlines.append ":set"
 		  end
 		  
 		  for i = 0 to c
@@ -83,7 +83,7 @@ Inherits XPFunction
 		        compiledlines.AddRow ti
 		      next
 		      compiledlines.AddRow "/"+f
-		      compiledlines.AddRow "_init"
+		      compiledlines.AddRow ":init"
 		    case "set"
 		      fields = body.split(" ")
 		      f = fields(0).trim
@@ -91,7 +91,13 @@ Inherits XPFunction
 		        raise new XPError("Set empty field #"+ti,321)
 		      end
 		      fields.RemoveRowAt 0
-		      body = Text.Join(fields," ")
+		      body = Text.join(fields," ").trim
+		      fields = body.split(" ")
+		      if fields(0) <> "=" then
+		        raise new XPError("Set missing =",601)
+		      end
+		      fields.Remove 0
+		      body = Text.join(fields," ").trim
 		      if body <> "" then
 		        xp = new XPEvaluator
 		        xp.Compile(body)
@@ -102,7 +108,7 @@ Inherits XPFunction
 		        compiledlines.AddRow "0"
 		      end
 		      compiledlines.AddRow "/"+f
-		      compiledlines.AddRow "_set"
+		      compiledlines.AddRow ":set"
 		    case "if"
 		      conditioncount = 1
 		      elsefound = -1
@@ -125,7 +131,7 @@ Inherits XPFunction
 		              'compiledlines.AddRow ti
 		              'next
 		              'compiledlines.append str(j+offset+1).ToText
-		              'compiledlines.append "_gotoifn"
+		              'compiledlines.append ":gotoifn"
 		              lines(j) = ""
 		              elsefound = j
 		            else
@@ -142,7 +148,7 @@ Inherits XPFunction
 		                  compiledlines.AddRow ti
 		                next
 		                compiledlines.append str(j+offset+1).ToText
-		                compiledlines.append "_gotoifn"
+		                compiledlines.append ":gotoifn"
 		              else
 		                xp = new XPEvaluator
 		                xp.Compile(body)
@@ -150,7 +156,7 @@ Inherits XPFunction
 		                  compiledlines.AddRow ti
 		                next
 		                compiledlines.append str(elsefound+offset+2).ToText
-		                compiledlines.append "_gotoifn"
+		                compiledlines.append ":gotoifn"
 		                lines(elsefound) = "goto "+str(j+offset+1).ToText
 		              end
 		              lines(j) = ""
@@ -186,7 +192,7 @@ Inherits XPFunction
 		                compiledlines.AddRow ti
 		              next
 		              compiledlines.append str(j+2+offset).ToText
-		              compiledlines.append "_gotoifn"
+		              compiledlines.append ":gotoifn"
 		              lines(j) = "goto "+str(i+1+offset).ToText
 		              found = true
 		            else
@@ -203,7 +209,7 @@ Inherits XPFunction
 		      end
 		    case "goto" //if //while
 		      compiledlines.append body
-		      compiledlines.append "_goto"
+		      compiledlines.append ":goto"
 		    else
 		      
 		      raise new XPError("Invalid instruction #"+ti,66)
@@ -214,10 +220,10 @@ Inherits XPFunction
 		  if isAggregator then
 		    compiledlines.append "0"
 		    compiledlines.append "/aggregatorfirstrun"
-		    compiledlines.append "_set"
+		    compiledlines.append ":set"
 		    
 		    compiledlines.append "190000"
-		    compiledlines.append "_goto"
+		    compiledlines.append ":goto"
 		    
 		    compiledlines.append "#190001"
 		  end
@@ -235,7 +241,7 @@ Inherits XPFunction
 		  lines = source.split(chr(10).ToText)
 		  offset = off 
 		  
-		  label = "_"+lb
+		  label = ":"+lb
 		  
 		  xp = new XPEvaluator
 		  

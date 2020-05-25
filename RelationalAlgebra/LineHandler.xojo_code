@@ -30,7 +30,7 @@ Implements RelationNotifier
 		  dim body as text
 		  dim found as Boolean
 		  dim xp as XPEvaluator
-		  dim tx,ti,tn as text
+		  dim tx,ti,tn,tnkey as text
 		  dim fn as XPCompiledFunction
 		  dim a as Accumulator
 		  dim firstchart as Boolean
@@ -190,15 +190,15 @@ Implements RelationNotifier
 		          errors.Append il
 		        end if
 		      end
-		    case "chart"
-		      if mode <> "html" then continue
-		      if ubound(stack) < 0 then
-		        result = result + ptagerror+ti+" Error : Stack empty"+ptag2
-		        errors.Append il
-		      else
-		        r = stack(UBound(stack))
-		        result = result + r.ToChart(body)
-		      end
+		      'case "chart"
+		      'if mode <> "html" then continue
+		      'if ubound(stack) < 0 then
+		      'result = result + ptagerror+ti+" Error : Stack empty"+ptag2
+		      'errors.Append il
+		      'else
+		      'r = stack(UBound(stack))
+		      'result = result + r.ToChart(body)
+		      'end
 		    case "beep"
 		      SetBeep body
 		    case "compile"
@@ -684,6 +684,25 @@ Implements RelationNotifier
 		            result = result + ptagerror+ti+" Error : File does not exist"+ptag2
 		            errors.Append il
 		          else
+		            tnkey = tn + "|" + file.ModificationDate.TotalSeconds.ToText
+		            #if TargetDesktop
+		              if readcache.HasKey(tnkey) then
+		                au = readcache.value(tnkey) 
+		                if au isa Relation then
+		                  r = relation(au)
+		                  stack.AddRow r.Clone
+		                  continue
+		                end
+		              else
+		                // there may be an obsolete version we need to remove from cache
+		                for each key in readcache.keys
+		                  if key.Length>= tn.length and tn = key.left(tn.Length) then
+		                    readcache.Remove(key)
+		                  end
+		                next
+		              end
+		            #endif
+		            
 		            dim tip as TextInputStream
 		            tip = TextInputStream.Open(file)
 		            select case enc
@@ -721,18 +740,27 @@ Implements RelationNotifier
 		                r.SetCSV readlines, csvpad
 		                stack.AddRow r
 		                r.Notifier = nil
+		                #if TargetDesktop
+		                  readcache.value(tnkey) = r.Clone
+		                #endif
 		                redim readlines(-1) 
 		              case ".txt"
 		                tx = tip.ReadAll.ToText
 		                r = new Relation("")
 		                r.tab = tx
 		                stack.AddRow r
+		                #if TargetDesktop
+		                  readcache.value(tnkey) = r.Clone
+		                #endif
 		              else
 		                tx = tip.ReadAll.ToText
 		                if right(tn,5)=".json" then
 		                  r = new Relation("")
 		                  r.JSON = tx
 		                  stack.AddRow r
+		                  #if TargetDesktop
+		                    readcache.value(tnkey) = r.Clone
+		                  #endif
 		                else
 		                  result = result + ptagerror+ti+" Error : Invalid filename "+tn+ptag2
 		                  errors.Append il
@@ -769,7 +797,7 @@ Implements RelationNotifier
 		      body = Text.Join(fields," ")
 		      if programs.HasKey(key) then
 		        tx = programs.value(key)
-		        result = result + run(tx,key,body) // result is property 
+		        result = run(tx,key,body) // result is property 
 		      else
 		        result = result + ptagerror+ti+" Error : Program not defined "+key+ptag2
 		        errors.Append il
@@ -810,7 +838,13 @@ Implements RelationNotifier
 		      fields = body.split(" ")
 		      key = fields(0)
 		      fields.RemoveRowAt 0
-		      body = Text.Join(fields," ")
+		      body = Text.join(fields," ").trim
+		      fields = body.split(" ")
+		      if fields(0) <> "=" then
+		        raise new XPError("Set missing =",601)
+		      end
+		      fields.Remove 0
+		      body = Text.join(fields," ").trim
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
 		      globals.value(key) = xp.evaluate(globals,locals)
@@ -879,6 +913,19 @@ Implements RelationNotifier
 		        r2 = stack.pop
 		        r2.union(r)
 		        stack.AddRow r2
+		      end
+		    case "update"
+		      if ubound(stack) < 0 then
+		        result = result + ptagerror+ti+" Error : Stack empty"+ptag2
+		        errors.Append il
+		      else
+		        r = stack(UBound(stack))
+		        r.globals = globals
+		        r.locals = locals
+		        r.functions = functions
+		        r.Notifier = me
+		        r.update(body)
+		        r.Notifier = nil
 		      end
 		    case "while"
 		      xp = new XPEvaluator(functions)
@@ -1079,6 +1126,10 @@ Implements RelationNotifier
 
 	#tag Property, Flags = &h0
 		programs As Dictionary
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		readcache As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

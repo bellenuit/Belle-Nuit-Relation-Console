@@ -24,7 +24,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 1
-		  label = "_secondstosql"
+		  label = ":secondstosql"
 		End Sub
 	#tag EndMethod
 

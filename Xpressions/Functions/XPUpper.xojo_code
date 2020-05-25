@@ -23,7 +23,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 1
-		  label = "_upper"
+		  label = ":upper"
 		End Sub
 	#tag EndMethod
 

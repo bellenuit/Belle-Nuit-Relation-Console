@@ -24,7 +24,7 @@ Inherits XPFunction
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  arity = 2
-		  label = "_min"
+		  label = ":min"
 		End Sub
 	#tag EndMethod
 

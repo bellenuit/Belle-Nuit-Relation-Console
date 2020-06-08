@@ -270,10 +270,12 @@ Implements RelationNotifier
 		      xp.Compile(body)
 		      tx =  xp.evaluate(globals,locals)
 		      result = result + tx + ptag2 
-		      select case tx.left(1)
-		      case "=", "*", "{","|"
-		      else
-		        result = result + ptag2
+		      if tx.Length>0 then
+		        select case tx.left(1)
+		        case "=", "*", "{","|"
+		        else
+		          result = result + ptag2
+		        end
 		      end
 		      xp = nil
 		    case "else"
@@ -347,11 +349,20 @@ Implements RelationNotifier
 		    case "function"
 		      redim plines(-1)
 		      plines.AddRow line
+		      fields = line.split("(")
+		      if ubound(fields) = 0 then
+		        result = result + ptagerror+ti+" Error : Missing paranthesis"+ptag2
+		        errors.Append il
+		      end
+		      key = fields(0).trim
+		      key = key.mid(len("function ")).trim
+		      fields.RemoveRowAt 0
+		      body = "(" + text.join(fields,"(")
 		      if offsets.HasKey(body.trim) then
 		        result = result + ptagerror+ti+" Warning : Symbol overwritten"+ptag2
 		        errors.Append il
 		      end
-		      offsets.Value(body.trim) = i
+		      offsets.Value(key) = i
 		      found = false
 		      while i<c and not found
 		        i = i + 1
@@ -362,8 +373,8 @@ Implements RelationNotifier
 		        end
 		      wend
 		      if found then
-		        fn = new XPCompiledFunction(fields(0).trim, Text.join(plines,chr(10).ToText),offsets.value(body.trim))
-		        functions.value(fields(0).trim)= fn
+		        fn = new XPCompiledFunction(key, Text.join(plines,chr(10).ToText),offsets.value(key))
+		        functions.value(key)= fn
 		      else
 		        result = result + ptagerror+ti+" Error : Function missing end"+ptag2
 		        errors.Append il
@@ -581,10 +592,19 @@ Implements RelationNotifier
 		      end
 		    case "program"
 		      redim plines(-1)
-		      fields = body.split(" ")
+		      fields = body.split("(")
+		      if ubound(fields) = 0 then
+		        result = result + ptagerror+ti+" Error: Missing paranthesis"+ptag2
+		        errors.Append il
+		      end
 		      key = fields(0).trim
 		      fields.RemoveRowAt 0
-		      body = Text.Join(fields," ").trim
+		      body = "("+Text.Join(fields,")").trim
+		      if left(body,1) <> "(" or right(body,1) <> ")" then
+		        result = result + ptagerror+ti+" Error: Missing paranthesis"+ptag2
+		        errors.Append il
+		      end
+		      body = body.mid(1,len(body)-2) 
 		      if body<>"" then
 		        commafields = body.split(",")
 		        k = commafields.Count-1
@@ -790,17 +810,27 @@ Implements RelationNotifier
 		        r.rename(body)
 		      end
 		    case "run"
-		      fields = body.split(" ")
-		      key = fields(0)
-		      
-		      fields.RemoveRowAt 0
-		      body = Text.Join(fields," ")
-		      if programs.HasKey(key) then
-		        tx = programs.value(key)
-		        result = run(tx,key,body) // result is property 
-		      else
-		        result = result + ptagerror+ti+" Error : Program not defined "+key+ptag2
+		      fields = body.split("(")
+		      if ubound(fields) = 0 then
+		        result = result + ptagerror+ti+" Error : Missing arguments"+ptag2
 		        errors.Append il
+		      else
+		        key = fields(0).trim
+		        fields.RemoveRowAt 0
+		        body = "(" + Text.Join(fields,"(")
+		        if body.left(1) <> "(" or body.right(1) <> ")" then
+		          result = result + ptagerror+ti+" Error : Missing paranthesis"+ptag2
+		          errors.Append il
+		        else
+		          body = body.mid(1,len(body)-2)
+		          if programs.HasKey(key) then
+		            tx = programs.value(key)
+		            result = run(tx,key,body) // result is property 
+		          else
+		            result = result + ptagerror+ti+" Error : Program not defined "+key+ptag2
+		            errors.Append il
+		          end
+		        end
 		      end
 		    case "select"
 		      if ubound(stack) < 0 then

@@ -56,9 +56,40 @@ Protected Module WikitextModule
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Wiki2HTML(t as text) As text
+		Function Wiki2HTML(t as text, checknowiki as boolean = true) As text
 		  dim re as new RegEx
+		  dim multiline as boolean
+		  
+		  if checknowiki then
+		    dim n1, n2 as integer
+		    dim t1, t2, t3 as text
+		    n1 = t.IndexOf("<nowiki>")
+		    if n1 > -1 then
+		      n2 = t.IndexOf(n1, "</nowiki>")
+		      
+		      t1 = t.left(n1)
+		      if n2>-1 then
+		        t2 = t.mid(n1+len("<nowiki>"),n2-n1-len("<nowiki>"))
+		        t3 = t.mid(n2+len("</nowiki>"))
+		      else
+		        t2 = t.mid(n1+len("<nowiki>"))
+		        t3 = ""
+		      end
+		      t1 = Wiki2HTML(t1,false)
+		      t3 = Wiki2HTML(t3,true)
+		      return t1 + t2 + t3
+		    end
+		    
+		  end
+		  
+		  
+		  
+		  
+		  
 		  re.Options.ReplaceAllMatches = True
+		  
+		  
+		  
 		  
 		  dim s as string
 		  
@@ -71,33 +102,11 @@ Protected Module WikitextModule
 		  dim i as integer
 		  
 		  
-		  // chart
-		  
-		  // <div class="ct-chart ct-minor-seventh" id="chart235692"></div>
-		  // <script> var data = {labels : ["a 5","b 1"],  series: [ [5,1]] };  
-		  // var options = { };  
-		  // new Chartist.Line("#chart235692", data, options)
-		  // </script> 
-		  
-		  
-		  // <div class="ct-chart ct-minor-seventh" id="chart235692"></div>
-		  // {{chart
-		  // | chart235692
-		  // | ["a 5","b 1"]
-		  // | [ [5,1]] 
-		  // | options
-		  // }}
-		  
-		  re.SearchPattern = "\{\{chart\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\}\}"
-		  re.ReplacementPattern ="<div class=""ct-chart ct-minor-seventh"" id=""$1""></div>" +_
-		  "<script> var data = {labels : $3,  series: $4 };  "+_
-		  "var options = {  $5 };  "+_
-		  "new Chartist.$2(""#$1"", data, options)"+_
-		  "</script>"
-		  s = re.Replace(s)
-		  
-		  
 		  lines = s.Split(EndOfLine)
+		  
+		  if ubound(lines) > 0 then
+		    multiline = true
+		  end
 		  
 		  // table
 		  
@@ -210,6 +219,12 @@ Protected Module WikitextModule
 		    re.Options.ReplaceAllMatches = True
 		    s = re.Replace(s)
 		    
+		    // hr
+		    re.SearchPattern = "^----"
+		    re.ReplacementPattern ="<hr>"
+		    re.Options.ReplaceAllMatches = True
+		    s = re.Replace(s)
+		    
 		    // h4
 		    re.SearchPattern = "^====(.*?)===="
 		    re.ReplacementPattern ="<h4>$1</h4>"
@@ -313,7 +328,8 @@ Protected Module WikitextModule
 		    s = re.Replace(s)
 		    
 		    if s.IndexOf("<h2>") = -1 and s.IndexOf("<h3>") = -1 and s.IndexOf("<h4>") = -1 _
-		      and s.IndexOf("<ul>") = -1 and s.IndexOf("<li>") = -1  and s.IndexOf("<t") = -1 and s.IndexOf("<p") = -1  then
+		      and s.IndexOf("<ul>") = -1 and s.IndexOf("<li>") = -1  and s.IndexOf("<t") = -1 and s.IndexOf("<p") = -1  _
+		      and multiline then
 		      s = "<p>"+s+"</p>"
 		    end
 		    

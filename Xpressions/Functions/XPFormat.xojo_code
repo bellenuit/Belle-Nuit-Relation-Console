@@ -1,25 +1,32 @@
 #tag Class
-Protected Class XPSign
+Protected Class XPFormat
 Inherits XPFunction
 	#tag Event
 		Sub pRun(byref stack() as text)
-		  dim a as double
+		  dim a, b as text
+		  dim s, s2 as string
 		  
-		  if ubound(stack)<0 then
-		    raise new xperror("stack <1",102)
+		  if ubound(stack)<1 then
+		    raise new xperror("stack <2",102)
 		  end
 		  
-		  a = val(stack.Pop)
+		  b = stack.pop
+		  a = stack.pop
 		  
-		  stack.AddRow str(Sign(a)).ToText
+		  s = a
+		  
+		  s2 = StringUtils.sprintf(b,s)
+		  
+		  stack.AddRow s2.ToText
+		  
 		End Sub
 	#tag EndEvent
 
 
 	#tag Method, Flags = &h0
 		Sub Constructor()
-		  arity = 1
-		  label = ":sign"
+		  arity = 2
+		  label = ":format"
 		End Sub
 	#tag EndMethod
 

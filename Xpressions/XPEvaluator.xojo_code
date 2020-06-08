@@ -224,6 +224,9 @@ Protected Class XPEvaluator
 		  functions.AddRow new XPSecondsToSQL
 		  functions.AddRow new XPSQLtoSeconds
 		  
+		  functions.AddRow new XPFormat
+		  // functions.AddRow new XPNumberFormat
+		  
 		  expectedreturn = 1
 		  
 		  

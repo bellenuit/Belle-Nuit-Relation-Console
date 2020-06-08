@@ -58,8 +58,18 @@ Inherits XPFunction
 		      if  isAggregator or i > 0 then
 		        raise new XPError("Invalid instruction #"+ti,66)
 		      end
-		      fields.RemoveRowAt 0
 		      body = Text.Join(fields," ")
+		      fields = body.Split("(")
+		      if ubound(fields) = 0 then
+		        raise new XPError("Missing paranthesis in function definition #"+ti,66)
+		      end
+		      fields.RemoveRowAt 0
+		      body = "("+Text.Join(fields,"(")
+		      body = body.trim
+		      if body.left(1) <> "(" or body.right(1) <> ")" then
+		        raise new XPError("Missing paranthesis in function definition #"+ti,66)
+		      end
+		      body = body.mid(1,len(body)-2)
 		      fields = body.Split(",")
 		      arity = fields.Count
 		      for j = arity-1 downto 0
@@ -359,6 +369,22 @@ Inherits XPFunction
 
 
 	#tag ViewBehavior
+		#tag ViewProperty
+			Name="label"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="text"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="arity"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="int64"
+			EditorType=""
+		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true

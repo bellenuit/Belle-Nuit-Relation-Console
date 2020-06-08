@@ -431,9 +431,15 @@ Protected Class Relation
 		    fields(0) = fields(0).Trim
 		    fields(1) = fields(1).Trim
 		    
+		    if fields(1).left(1) <> """" or fields(1).right(1) <> """"  then
+		      raise new RelationError("Invalid format missing quotes",121)
+		    end
+		    
+		    fields(1) = fields(1).mid(1,fields(1).Length-2) // remove quotes
+		    
 		    i = header.indexof(fields(0)) 
 		    if  i= -1 then
-		      raise new RelationError("Unknown format " +fields(0),122)
+		      raise new RelationError("Unknown field " +fields(0),122)
 		    end
 		    
 		    formats.Value(fields(0)) = fields(1)
@@ -454,7 +460,8 @@ Protected Class Relation
 	#tag Method, Flags = &h0
 		Function format2(d as double, f as string) As string
 		  dim result as string
-		  result = format(d,f)
+		  //result = format(d,f)
+		  result = StringUtils.sprintf(f,d)
 		  if abs(d)<10e-12 and f="#" then
 		    result = ""
 		  end
@@ -462,6 +469,8 @@ Protected Class Relation
 		    result = mid(result,2)
 		  end
 		  return result
+		  
+		  
 		End Function
 	#tag EndMethod
 
@@ -2091,13 +2100,13 @@ Protected Class Relation
 		        case "first", "each", "last","end"
 		          selectors.AddRow(sel)
 		          if ubound(selectors) > 0 then
-		            templates.AddRow(tmp.mid(lastvalidi,i-lastvalidi).trim)+text.EndOfLine
+		            templates.AddRow(tmp.mid(lastvalidi,i-lastvalidi).trim)
 		          end
 		          lastvalidi = i2+2
 		        case "group"
 		          selectors.AddRow(sel2)
 		          if ubound(selectors) > 0 then
-		            templates.AddRow(tmp.mid(lastvalidi,i-lastvalidi).trim)+text.EndOfLine
+		            templates.AddRow(tmp.mid(lastvalidi,i-lastvalidi).trim)
 		          end
 		          lastvalidi = i2+2
 		        else

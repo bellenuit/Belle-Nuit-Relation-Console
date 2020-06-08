@@ -57,12 +57,7 @@ Inherits ConsoleApplication
 		    while not done
 		      StdOut.Write("> ")
 		      t = ""
-		      'do 
-		      'ch = stdin.Read(1).ToText
-		      't = t + ch
-		      'loop until ch = text.EndOfLine
 		      found = false
-		      t = ""
 		      do
 		        t = t + Input.ToText
 		        if t="" then 
@@ -72,12 +67,10 @@ Inherits ConsoleApplication
 		          
 		        else
 		          t = t.mid(0,t.Length-1)
-		          t = t + text.EndOfLine
 		        end
 		        
 		      loop until found
 		      
-		      //StdOut.WriteLine("verstanden "+t)
 		      if t="q" or t="quit" then 
 		        done = true
 		      elseif t="history" then
@@ -89,8 +82,8 @@ Inherits ConsoleApplication
 		        t = t.ReplaceAll(" ; ",text.EndOfLine)
 		        lh.Result=""
 		        result = lh.run(t,"_int")
-		        if result <> "" and right(result,1) <> text.EndOfLine then
-		          result = result + text.EndOfLine
+		        if left(t,4)="echo" and result.right(2) =text.EndOfLine+text.EndOfLine then
+		          result = result.mid(0,result.length-1)
 		        end
 		        StdOut.Write(result)
 		      end

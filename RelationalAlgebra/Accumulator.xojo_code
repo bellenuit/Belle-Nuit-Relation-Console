@@ -2,7 +2,7 @@
 Protected Class Accumulator
 	#tag Method, Flags = &h0
 		Sub Add(t as text)
-		  list.AddRow t
+		  if t<>"" then list.AddRow t
 		End Sub
 	#tag EndMethod
 
@@ -160,7 +160,7 @@ Protected Class Accumulator
 		  if acc.count mod 2 <> 0 then
 		    v = acc((acc.count-1)/2)
 		  else
-		    v = (acc(acc.count/2) +  acc(acc.count/2-2))/2
+		    v = (acc(acc.count/2) +  acc(acc.count/2-1))/2
 		  end
 		  
 		  return cText12(v)
@@ -270,6 +270,7 @@ Protected Class Accumulator
 
 	#tag Method, Flags = &h0
 		Function Reduce() As Text
+		  
 		  select case method
 		  case "count"
 		    return pCount

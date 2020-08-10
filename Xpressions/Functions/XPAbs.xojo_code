@@ -26,22 +26,6 @@ Inherits XPFunction
 
 	#tag ViewBehavior
 		#tag ViewProperty
-			Name="label"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="text"
-			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="arity"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="int64"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"

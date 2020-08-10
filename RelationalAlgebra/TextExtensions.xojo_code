@@ -87,13 +87,23 @@ Protected Module TextExtensions
 
 	#tag Method, Flags = &h0
 		Function IsNumeric(extends t as Text) As boolean
-		  return IsNumeric(t)
+		  dim r as RegEx
 		  
 		  dim start, hasperiod as boolean
 		  if t="" then return true
 		  if t.left(1) = "-" then return t.mid(1).isnumeric
 		  
 		  start = true
+		  
+		  r = new regex
+		  r.SearchPattern = "^[+-]?\d(\.\d+)?[Ee][+-]?\d+$"
+		  
+		  if r.Search(t) <> nil then
+		    return true
+		  else
+		    return false
+		  end
+		  
 		  
 		  For Each c As Text In t.Characters
 		    select case c

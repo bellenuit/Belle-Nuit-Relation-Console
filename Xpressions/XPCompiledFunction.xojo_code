@@ -76,31 +76,31 @@ Inherits XPFunction
 		        fl = fields(j).trim
 		        args.addrow fl
 		      next
-		    case "init"
-		      if not isAggregator then
-		        raise new XPError("Invalid instruction #"+ti,66)
-		      end
-		      fields = body.split(" ")
-		      f = fields(0).trim
-		      if f = "" then
-		        raise new XPError("Set empty field #"+ti,321)
-		      end
-		      fields.RemoveRowAt 0
-		      rest = Text.join(fields," ").trim
-		      fields = rest.split(" ")
-		      eq = fields(0)
-		      if eq <> "=" then
-		        raise new XPError("Init missing =",601)
-		      end
-		      fields.RemoveRowAt 0
-		      body = Text.Join(fields," ")
-		      xp = new XPEvaluator
-		      xp.Compile(body)
-		      for each ti in xp.rpn
-		        compiledlines.AddRow ti
-		      next
-		      compiledlines.AddRow "/"+f
-		      compiledlines.AddRow ":init"
+		      'case "init"
+		      'if not isAggregator then
+		      'raise new XPError("Invalid instruction #"+ti,66)
+		      'end
+		      'fields = body.split(" ")
+		      'f = fields(0).trim
+		      'if f = "" then
+		      'raise new XPError("Set empty field #"+ti,321)
+		      'end
+		      'fields.RemoveRowAt 0
+		      'rest = Text.join(fields," ").trim
+		      'fields = rest.split(" ")
+		      'eq = fields(0)
+		      'if eq <> "=" then
+		      'raise new XPError("Init missing =",601)
+		      'end
+		      'fields.RemoveRowAt 0
+		      'body = Text.Join(fields," ")
+		      'xp = new XPEvaluator
+		      'xp.Compile(body)
+		      'for each ti in xp.rpn
+		      'compiledlines.AddRow ti
+		      'next
+		      'compiledlines.AddRow "/"+f
+		      'compiledlines.AddRow ":init"
 		    case "set"
 		      fields = body.split(" ")
 		      f = fields(0).trim
@@ -369,22 +369,6 @@ Inherits XPFunction
 
 
 	#tag ViewBehavior
-		#tag ViewProperty
-			Name="label"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="text"
-			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="arity"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="int64"
-			EditorType=""
-		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true

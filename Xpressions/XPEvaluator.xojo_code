@@ -13,6 +13,7 @@ Protected Class XPEvaluator
 		  dim rv as new Random
 		  dim rvi, i, c as int64
 		  dim fn as text
+		  dim foundhigher as Boolean
 		  
 		  source = s
 		  rpn.RemoveAllRows
@@ -51,10 +52,8 @@ Protected Class XPEvaluator
 		        e = operatorStack.pop
 		        if left(e,2) = "@(" then
 		          fn = ":" +e.mid(2)
-		          if fn<>":comma" then
-		            rpn.AddRow fn
-		          end
-		        elseif e <> "(" and e<>"1" and e<>":comma" and val(e) = 0 then 
+		          rpn.AddRow fn
+		        elseif e <> "(" and e<>"1" and val(e) = 0 then 
 		          rpn.AddRow e
 		        end
 		      loop until left(e,2) = "@(" or e = "(" 
@@ -62,7 +61,8 @@ Protected Class XPEvaluator
 		    else
 		      for each op in operators
 		        if t = op.label then
-		          if ubound(operatorStack) > 0 then
+		          foundhigher = true
+		          while ubound(operatorStack) > 0 and foundhigher 
 		            // compare with stack
 		            e = operatorStack.pop
 		            if op.associativity ="L" and op.precedence <= val(e) then
@@ -70,9 +70,10 @@ Protected Class XPEvaluator
 		            elseif op.associativity ="R" and op.precedence < val(e) then
 		              rpn.AddRow operatorStack.pop
 		            else
+		              foundhigher = false
 		              operatorStack.AddRow e
 		            end
-		          end
+		          wend
 		          if op.functionlabel = ":and" then
 		            rvi = rv.InRange(50000,80000)
 		            rpn.AddRow str(rvi).totext
@@ -269,7 +270,8 @@ Protected Class XPEvaluator
 		  if right(s,1)="." then
 		    s = mid(s,1,len(s)-1)
 		  end
-		  return s.ToText
+		  t = s.ToText
+		  if t = "0.000000000000e+0" then return "0" else return t
 		  
 		  
 		End Function
@@ -328,18 +330,8 @@ Protected Class XPEvaluator
 		        end
 		        found = true
 		        
-		      case ":init" 
-		        if localdict.HasKey(aggregatorfirstrun) then
-		          if  localdict.value(aggregatorfirstrun) <> "0" then
-		            localdict.Value(currentlabel) = stack.pop
-		          else
-		            dummy = stack.pop
-		          end
-		        else
-		          raise new XPError("Illegal instruction init "+currentindex,31)
-		        end
-		        found = true
-		        
+		      case ":comma"
+		        found = true // nop
 		        
 		      case ":goto"
 		        jump = "#"+stack.pop
@@ -375,6 +367,18 @@ Protected Class XPEvaluator
 		          end
 		        end
 		        found = true
+		      case ":init" 
+		        if localdict.HasKey(aggregatorfirstrun) then
+		          if  localdict.value(aggregatorfirstrun) <> "0" then
+		            localdict.Value(currentlabel) = stack.pop
+		          else
+		            dummy = stack.pop
+		          end
+		        else
+		          raise new XPError("Illegal instruction init "+currentindex,31)
+		        end
+		        found = true
+		        
 		      case ":orleft"
 		        jump = "#"+stack.pop
 		        cond = stack.pop
@@ -425,6 +429,18 @@ Protected Class XPEvaluator
 		    case "#"
 		      currentindex = e
 		    else
+		      if right(e,1) = "^" then
+		        e2 = e.left(e.Length-1) // indirection
+		        if localdict.HasKey(e2) then
+		          e = localdict.value(e2)
+		        elseif values.HasKey(e2) then
+		          e = values.value(e2)
+		        elseif locals <> nil and locals.HasKey(e2) then
+		          e = locals.value(e2)
+		        elseif globals <> nil and globals.HasKey(e2) then
+		          e = globals.value(e2)
+		        end
+		      end
 		      if localdict.HasKey(e) then
 		        stack.AddRow localdict.value(e)
 		      elseif values.HasKey(e) then
@@ -491,7 +507,7 @@ Protected Class XPEvaluator
 		  for i = 0 to c
 		    ch = s.mid(i,1)
 		    select case state
-		    case "start"
+		    case "start", "comma"
 		      select case ch
 		      case """"
 		        state = "string"
@@ -503,10 +519,13 @@ Protected Class XPEvaluator
 		        state = "name"
 		        acc = ch
 		      case "("
+		        state = "start"
 		        tokens.AddRow "("
 		      case ")"
+		        state = "start"
 		        tokens.AddRow ")"
 		      case "-","/","*","+","."
+		        state = "start"
 		        tokens.AddRow ch
 		      case "="
 		        state ="equal"
@@ -517,6 +536,10 @@ Protected Class XPEvaluator
 		      case "!"
 		        state = "not"
 		      case ","
+		        if state = "comma" or ubound(tokens) < 0 then // CSV empty values field,,field
+		          tokens.AddRow "$"
+		        end if
+		        state = "comma"
 		        tokens.AddRow ","
 		      case " "
 		      else
@@ -599,6 +622,10 @@ Protected Class XPEvaluator
 		      case "("
 		        state ="start"
 		        tokens.AddRow "@(" + acc 
+		        acc = ""
+		      case "^"
+		        state ="start"
+		        tokens.AddRow acc+"^"
 		        acc = ""
 		      else
 		        state ="start"
@@ -690,6 +717,8 @@ Protected Class XPEvaluator
 		    tokens.AddRow "$" + acc
 		  case "number", "numberfraction", "numberexponent","numberexponentnegatif", "name"
 		    tokens.AddRow acc
+		  case "comma"
+		    tokens.AddRow "$"
 		  else
 		    raise new XPError("Tokenize unknown state """+state+"""",11)
 		  end
@@ -799,20 +828,20 @@ Protected Class XPEvaluator
 		  results.AddRow "4"
 		  
 		  tests.AddRow "pow(2,3)"
-		  comps.AddRow "2 3 :pow"
+		  comps.AddRow "2 3 :comma :pow"
 		  results.AddRow "8"
 		  
 		  tests.AddRow "pow(3+1,3)"
-		  comps.AddRow "3 1 :add 3 :pow"
+		  comps.AddRow "3 1 :add 3 :comma :pow"
 		  results.AddRow "64"
 		  
 		  
 		  tests.AddRow "replace(d.e,""sd"",""sbb"")"
-		  comps.AddRow "d e :concat $sd :comma $sbb :replace"
+		  comps.AddRow "d e :concat $sd :comma $sbb :comma :replace"
 		  results.AddRow "asbbfjklö"
 		  
 		  tests.AddRow "100 * (5+pow(3+1,3)) / 10000"
-		  comps.AddRow "100 5 3 1 :add 3 :pow :add :mul 10000 :div"
+		  comps.AddRow "100 5 3 1 :add 3 :comma :pow :add :mul 10000 :div"
 		  results.AddRow "0.69"
 		  
 		  tests.addrow " ""lorem ipsum"" . ""RRR"" "
@@ -840,7 +869,7 @@ Protected Class XPEvaluator
 		  'results.AddRow ""
 		  
 		  tests.AddRow "pow(3+1,3)"
-		  comps.AddRow "3 1 :add 3 :pow"
+		  comps.AddRow "3 1 :add 3 :comma :pow"
 		  results.AddRow "64"
 		  
 		  tests.AddRow "(67 + 45 - 66 + 2)"
@@ -848,11 +877,11 @@ Protected Class XPEvaluator
 		  results.AddRow "48"
 		  
 		  tests.AddRow "(67 + 2 * 3 - 67 + 2/1 - 7)"
-		  comps.AddRow "67 2 3 :mul 67 :sub 2 1 :div 7 :sub :add :add"
+		  comps.AddRow "67 2 3 :mul :add 67 :sub 2 1 :div :add 7 :sub"
 		  results.AddRow "1"
 		  
 		  tests.AddRow "(2) + (17*2-30) * (5)+2 - (8/2)*4"
-		  comps.AddRow "2 17 2 :mul 30 :sub 5 :mul 2 :add 8 2 :div 4 :mul :sub :add"
+		  comps.AddRow "2 17 2 :mul 30 :sub 5 :mul :add 2 :add 8 2 :div 4 :mul :sub"
 		  results.AddRow "8"
 		  
 		  'tests.AddRow "(5*7/5) + (23) - 5 * (98-4)/(6*7-42)"

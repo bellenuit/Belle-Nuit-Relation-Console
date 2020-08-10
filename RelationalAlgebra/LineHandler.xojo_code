@@ -10,7 +10,7 @@ Implements RelationNotifier
 
 	#tag Method, Flags = &h0
 		Function Run(t as text, internal as text = "", internalbody as text = "") As text
-		  StartProfiling
+		  'StartProfiling
 		  
 		  dim lines(-1) as text
 		  dim readlines(-1) as text
@@ -151,31 +151,31 @@ Implements RelationNotifier
 		    fields.RemoveRowAt 0
 		    body = Text.Join(fields," ")
 		    select case command
-		    case "aggregator"
-		      redim plines(-1)
-		      if offsets.HasKey(body.trim) then
-		        result = result + ptagerror+ti+" Warning : Symbol overwritten "+body.trim+ptag2
-		        errors.Append il
-		      end
-		      offsets.Value(body.trim) = i+1
-		      found = false
-		      while i<c and not found
-		        i = i + 1
-		        line = lines(i).trim
-		        if line <> "end aggregator" then
-		          plines.AddRow line
-		        else
-		          
-		          found = true 
-		        end
-		      wend
-		      if found then
-		        a = new Accumulator(body.trim, Text.join(plines,chr(10).ToText),offsets.value(body.trim))
-		        aggregators.value(body.trim)=a
-		      else
-		        result = result + ptagerror+ti+" Error : Aggregator missing end"+ptag2
-		        errors.Append il
-		      end
+		      'case "aggregator"
+		      'redim plines(-1)
+		      'if offsets.HasKey(body.trim) then
+		      'result = result + ptagerror+ti+" Warning : Symbol overwritten "+body.trim+ptag2
+		      'errors.Append il
+		      'end
+		      'offsets.Value(body.trim) = i+1
+		      'found = false
+		      'while i<c and not found
+		      'i = i + 1
+		      'line = lines(i).trim
+		      'if line <> "end aggregator" then
+		      'plines.AddRow line
+		      'else
+		      '
+		      'found = true 
+		      'end
+		      'wend
+		      'if found then
+		      'a = new Accumulator(body.trim, Text.join(plines,chr(10).ToText),offsets.value(body.trim))
+		      'aggregators.value(body.trim)=a
+		      'else
+		      'result = result + ptagerror+ti+" Error : Aggregator missing end"+ptag2
+		      'errors.Append il
+		      'end
 		    case "assert"
 		      if ubound(stack) < 0 then
 		        result = result + ptagerror+ti+" Error : Stack empty"+ptag2
@@ -190,15 +190,7 @@ Implements RelationNotifier
 		          errors.Append il
 		        end if
 		      end
-		      'case "chart"
-		      'if mode <> "html" then continue
-		      'if ubound(stack) < 0 then
-		      'result = result + ptagerror+ti+" Error : Stack empty"+ptag2
-		      'errors.Append il
-		      'else
-		      'r = stack(UBound(stack))
-		      'result = result + r.ToChart(body)
-		      'end
+		      
 		    case "beep"
 		      SetBeep body
 		    case "compile"
@@ -401,7 +393,7 @@ Implements RelationNotifier
 		        wend
 		      end
 		    case "import"
-		      r = new Relation("a")
+		      r = new Relation("a", locals, globals)
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
 		      tn = xp.evaluate(globals,locals)
@@ -420,7 +412,7 @@ Implements RelationNotifier
 		          tip.Encoding = Encodings.UTF8
 		          tx = tip.ReadAll.ToText
 		          if tx<>"" then
-		            r = new Relation("")
+		            r = new Relation("",locals, globals)
 		            r.import(tx,tn)
 		            stack.AddRow r
 		          else
@@ -434,13 +426,13 @@ Implements RelationNotifier
 		      end
 		    case "include"
 		      
-		      r = new Relation("")
+		      r = new Relation("",locals, globals)
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
 		      tn = xp.evaluate(globals,locals)
 		      xp = nil
 		      if tn="" then tn=" "
-		      if not r.ValidName(tn.Replace(".rel","")) then
+		      if not ValidFileName(tn.Replace(".rel","")) then
 		        result = result + ptagerror+ti+" Error : Invalid filename "+tn+ptag2
 		        errors.Append il
 		      elseif not (".rel"=tn.right(4)) then
@@ -466,7 +458,7 @@ Implements RelationNotifier
 		              
 		              dim mlines(-1) as text
 		              offsets.Value(tn) = -i // give only fixed number on error include
-		              result = run(tmp,tn,"")
+		              result = result + run(tmp,tn,"")
 		              
 		            end if
 		            tip = nil
@@ -649,7 +641,7 @@ Implements RelationNotifier
 		        r.Notifier = nil
 		      end
 		    case "read"
-		      r = new Relation("")
+		      r = new Relation("",locals, globals)
 		      dim enc as text
 		      enc = "utf8"
 		      
@@ -681,7 +673,7 @@ Implements RelationNotifier
 		      tn = xp.evaluate(globals,locals)
 		      xp = nil
 		      if tn="" then tn=" "
-		      if not r.ValidName(tn.Replace(".csv","").Replace(".txt","").Replace(".json","")) then
+		      if not ValidFileName(tn.Replace(".csv","").Replace(".txt","").Replace(".json","")) then
 		        result = result + ptagerror+ti+" Error : Invalid filename "+tn+ptag2
 		        errors.Append il
 		      else
@@ -694,7 +686,7 @@ Implements RelationNotifier
 		          else
 		            result = result + ptagerror+ti+" Error : Relation does not exist "+tn+ptag2
 		            errors.Append il
-		            r = new Relation("")
+		            r = new Relation("",locals, globals)
 		          end
 		          stack.AddRow r.clone
 		        elseif currentpath<>"" then
@@ -755,7 +747,7 @@ Implements RelationNotifier
 		                  end
 		                #EndIf
 		                'tx = tip.ReadAll.ToText
-		                r = new Relation("")
+		                r = new Relation("",locals, globals)
 		                r.Notifier = me
 		                r.SetCSV readlines, csvpad
 		                stack.AddRow r
@@ -766,7 +758,7 @@ Implements RelationNotifier
 		                redim readlines(-1) 
 		              case ".txt"
 		                tx = tip.ReadAll.ToText
-		                r = new Relation("")
+		                r = new Relation("",locals, globals)
 		                r.tab = tx
 		                stack.AddRow r
 		                #if TargetDesktop
@@ -775,7 +767,7 @@ Implements RelationNotifier
 		              else
 		                tx = tip.ReadAll.ToText
 		                if right(tn,5)=".json" then
-		                  r = new Relation("")
+		                  r = new Relation("",locals, globals)
 		                  r.JSON = tx
 		                  stack.AddRow r
 		                  #if TargetDesktop
@@ -799,7 +791,7 @@ Implements RelationNotifier
 		        'end
 		      end
 		    case "relation"
-		      r = new relation(body)
+		      r = new relation(body,locals, globals)
 		      stack.AddRow r
 		    case "rename"
 		      if ubound(stack) < 0 then
@@ -879,6 +871,18 @@ Implements RelationNotifier
 		      xp.Compile(body)
 		      globals.value(key) = xp.evaluate(globals,locals)
 		      xp = nil
+		    case "stack"
+		      r = new relation("stack, cardinality, column", locals, globals)
+		      dim sti, stc, ci as int32
+		      for sti = 0 to ubound(stack)
+		        r2 = stack(sti)
+		        for each th as text in r2.header
+		          dim ins as text
+		          ins = str(sti+1).totext+","+str(r2.Cardinality).totext+","""+th+""""
+		          r.insert(ins)
+		        next
+		      next
+		      stack.AddRow(r)
 		    case "stop"
 		      i = c
 		    case "swap"
@@ -902,7 +906,7 @@ Implements RelationNotifier
 		        tn = xp.evaluate(globals,locals)
 		        xp = nil
 		        if tn="" then tn=" "
-		        if not r.ValidName(tn.Replace(".txt","")) then
+		        if not ValidFileName(tn.Replace(".txt","")) then
 		          result = result + ptagerror+ti+" Error : Invalid filename "+tn+ptag2
 		          errors.Append il
 		        else
@@ -985,7 +989,7 @@ Implements RelationNotifier
 		        xp.Compile(body)
 		        tn = xp.evaluate(globals,locals)
 		        xp = nil
-		        if not r.ValidName(tn.trim.Replace(".csv","").Replace(".txt","").Replace(".json","")) then
+		        if not ValidFileName(tn.trim.Replace(".csv","").Replace(".txt","").Replace(".json","")) then
 		          result = result + ptagerror+ti+" Error : Invalid filename "+tn+ptag2
 		          errors.Append il
 		        else
@@ -1102,6 +1106,20 @@ Implements RelationNotifier
 		  
 		  
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function ValidFileName(t as text) As boolean
+		  dim i,c as int64
+		  dim ch as text
+		  
+		  if t.length < 1 then return false
+		  if t.left(1) = "." then return false
+		  if t.IndexOf(":")>-1 then return false
+		  if t.IndexOf("/")>-1 then return false
+		  
+		  return true
+		End Function
 	#tag EndMethod
 
 

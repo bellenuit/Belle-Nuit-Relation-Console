@@ -2,11 +2,13 @@
 Protected Class Relation
 	#tag Method, Flags = &h0
 		Sub AddColumn(s as Text)
-		  if not validName(s) then
+		  dim t as text
+		  t = validname(s)
+		  if t = "" then
 		    raise new RelationError("Invalid name",102)
 		  end
-		  if header.IndexOf(s) = -1 then
-		    header.AddRow s
+		  if header.IndexOf(t) = -1 then
+		    header.AddRow t
 		  end
 		  
 		End Sub
@@ -150,16 +152,16 @@ Protected Class Relation
 
 	#tag Method, Flags = &h0
 		Function Clone() As Relation
-		  dim result as new Relation(header)
+		  dim result as new Relation(header,locals, globals)
 		  dim i, c as integer
 		  
 		  result.tuples = tuples.Clone
 		  result.Formats = formats.Clone
 		  result.labels = labels.Clone
 		  
-		  result.globals = globals
+		  
 		  result.functions = functions
-		  result.locals = locals
+		  
 		  
 		  
 		  return result
@@ -167,10 +169,12 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(columns() as text)
+		Sub Constructor(columns() as text, l as Dictionary, g as Dictionary)
 		  dim s as text
 		  
 		  // should check valid names
+		  locals = l
+		  globals = g
 		  
 		  for each s in columns
 		    AddColumn s.trim
@@ -183,12 +187,12 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(t as Text)
+		Sub Constructor(t as Text, l as Dictionary, g as Dictionary)
 		  dim pairs(-1) as text
 		  if t<>"" then
 		    pairs = t.Split(",")
 		  end
-		  Constructor pairs
+		  Constructor pairs, l, g
 		End Sub
 	#tag EndMethod
 
@@ -236,7 +240,7 @@ Protected Class Relation
 		  
 		  order(header(0))
 		  
-		  r = new Relation("")
+		  r = new Relation("",locals, globals)
 		  r.AddColumn(header(0))
 		  
 		  n = tuples.Count-1
@@ -437,6 +441,7 @@ Protected Class Relation
 		    
 		    fields(1) = fields(1).mid(1,fields(1).Length-2) // remove quotes
 		    
+		    fields(0) = validname(fields(0))
 		    i = header.indexof(fields(0)) 
 		    if  i= -1 then
 		      raise new RelationError("Unknown field " +fields(0),122)
@@ -469,8 +474,6 @@ Protected Class Relation
 		    result = mid(result,2)
 		  end
 		  return result
-		  
-		  
 		End Function
 	#tag EndMethod
 
@@ -951,6 +954,13 @@ Protected Class Relation
 		  next
 		  
 		  expression2 = ""
+		  
+		  if ubound(commonheader) < 0 then
+		    header.RemoveAllRows
+		    tuples.RemoveAll
+		    return
+		  end
+		  
 		  for each f as text in commonheader
 		    if expression2 = "" then
 		      expression2 = f+"_1 == "+ f+"_2"
@@ -1106,6 +1116,7 @@ Protected Class Relation
 		      raise new RelationError("Invalid label",121)
 		    end
 		    f0 = fields(0).trim
+		    f0 = validname(f0)
 		    fields.RemoveRowAt 0
 		    f1 = Text.join(fields," ").trim.ReplaceAll("""","")
 		    i = header.indexof(f0) 
@@ -1142,7 +1153,7 @@ Protected Class Relation
 		  end
 		  
 		  if start > tuples.count then 
-		    raise new XPError("Limit Start > count "+str(start+1).totext+"<"+str(tuples.count).totext ,88)
+		    raise new XPError("Limit Start > count "+str(start+1).totext+">"+str(tuples.count).totext ,88)
 		  end
 		  
 		  if length <0 then 
@@ -1202,7 +1213,17 @@ Protected Class Relation
 
 	#tag Method, Flags = &h0
 		Sub Order(pairs() as Text)
-		  tuples.OrderPairs = pairs
+		  dim pairs2() as text
+		  dim fields() as text
+		  
+		  for each p as text in pairs
+		    fields = p.Split(" ")
+		    fields(0) = ValidName(fields(0))
+		    pairs2.AddRow(text.join(fields," "))
+		  next
+		  
+		  
+		  tuples.OrderPairs = pairs2
 		  tuples.Order
 		  
 		  
@@ -1226,6 +1247,7 @@ Protected Class Relation
 		  list = t.split(" ")
 		  
 		  field = list(0)
+		  field = validname(field)
 		  list.Remove 0
 		  
 		  reg = list(0)
@@ -1359,7 +1381,8 @@ Protected Class Relation
 		  
 		  for each s in pairs
 		    fields = s.trim.split(" ")
-		    columns.AddRow fields(0).trim
+		    fields(0) = validname(fields(0).trim)
+		    columns.AddRow fields(0)
 		    if fields.Count >= 2 then
 		      stats.AddRow  fields(1).trim
 		      nc = fields(0).trim + "_" + fields(1).trim
@@ -1571,7 +1594,9 @@ Protected Class Relation
 		      raise new RelationError("Invalid rename",121)
 		    end
 		    fields(0) = fields(0).Trim
+		    fields(0) = validname(fields(0))
 		    fields(1) = fields(1).Trim
+		    fields(1) = validname(fields(1))
 		    i = header.indexof(fields(0)) 
 		    if  i= -1 then
 		      raise new RelationError("Unknown rename",122)
@@ -1687,7 +1712,7 @@ Protected Class Relation
 		  if list2(0)="key" then list2(0) = "key0"
 		  if list2(0)="value" then list2(0) = "value0"
 		  
-		  r = new relation(list2)
+		  r = new relation(list2,locals, globals)
 		  
 		  m = tuples.count-1
 		  for j = 0 to m
@@ -2113,10 +2138,11 @@ Protected Class Relation
 		          // ignore
 		        end
 		        
-		        lasti=i2+2
+		        
 		        
 		      end
 		    end
+		    lasti=max(i,i2)+2
 		  loop until i < 0
 		  
 		  if ubound(selectors) > -1 then
@@ -2264,6 +2290,7 @@ Protected Class Relation
 		  list = t.split(" ")
 		  
 		  first = list(0)
+		  first = ValidName(first)
 		  list.Remove 0
 		  
 		  rest = Text.join(list," ").trim
@@ -2347,14 +2374,26 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ValidName(t as text) As boolean
+		Function ValidName(t as text) As text
 		  dim i,c as int64
-		  dim ch as text
+		  dim ch, t2 as text
+		  
+		  if t.length < 1 then return "" // false
+		  
+		  if t.right(1) = "^" then
+		    t2 = t.left(t.length-1)
+		    if locals <> nil and locals.HasKey(t2) then
+		      return validname(locals.value(t2))
+		    end
+		    if globals <> nil and globals.HasKey(t2) then
+		      return validname(globals.value(t2))
+		    end
+		  end
 		  
 		  select case t.left(1)
 		  case "A" to "Z", "a" to "z","_"
 		  else
-		    return false
+		    return ""
 		  end
 		  
 		  c = t.Length-1
@@ -2363,11 +2402,11 @@ Protected Class Relation
 		    select case ch
 		    case "A" to "Z", "a" to "z", "0" to "9", "_"
 		    else
-		      return false
+		      return ""
 		    end
 		  next
 		  
-		  return true
+		  return t
 		End Function
 	#tag EndMethod
 

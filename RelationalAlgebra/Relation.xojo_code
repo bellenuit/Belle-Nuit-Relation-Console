@@ -1381,6 +1381,9 @@ Protected Class Relation
 		  for each s in pairs
 		    fields = s.trim.split(" ")
 		    fields(0) = validname(fields(0).trim)
+		    if fields(0) = "" then
+		      raise new RelationError("Project invalid name in "+s,141)
+		    end
 		    columns.AddRow fields(0)
 		    if fields.Count >= 2 then
 		      stats.AddRow  fields(1).trim
@@ -2006,6 +2009,66 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function ToCSV(limit as text = "") As text
+		  dim i, i0, c, j, k as integer
+		  dim lines(),fields() as text
+		  dim tp as tuple
+		  dim test as text
+		  dim f,fm as text
+		  dim a as auto
+		  dim quote as text = TextExtensions.Quote
+		  dim ret as text = TextExtensions.ret
+		  dim newline as text = TextExtensions.Newline
+		  dim line as text
+		  
+		  k = tuples.Count-1
+		  
+		  if val(limit) > 0 and val(limit)<=k then
+		    k = val(limit)-1
+		    i0 = 0
+		  elseif val(limit) < 0 and -val(limit)<=k then
+		    i0 = k+val(limit)+1
+		  end
+		  
+		  c = header.count-1
+		  
+		  lines.AddRow text.join(header,",")
+		  
+		  
+		  
+		  for j = i0 to k
+		    a = tuples.Value(j)
+		    if a isa tuple then
+		      tp = tuple(a)
+		    else
+		      raise new RelationError("CSV no tuple",121)
+		    end
+		    fields.RemoveAllRows
+		    for i = 0 to c
+		      f = header(i)
+		      test = tp.Value(f)
+		      if formats.HasKey(f) then
+		        fm = formats.Value(f)
+		        if fm<>"" then
+		          test = format2(val(test),fm).ToText
+		        end
+		      end
+		      if test.IsNumeric then
+		        fields.AddRow test
+		      else
+		        fields.AddRow Quote + test.ReplaceAll(Quote,Quote+Quote) + Quote
+		      end
+		      
+		    next
+		    lines.AddRow Text.join(fields,",")
+		  next
+		  
+		  return Text.join(lines,Newline)
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function ToHTML(limit as text = "") As Text
 		  dim line, result as text
 		  dim fields(), lines() as text
@@ -2041,10 +2104,10 @@ Protected Class Relation
 		  
 		  c = tuples.count-1
 		  
-		  if val(limit) > 0 and val(limit)<c then
+		  if val(limit) > 0 and val(limit)<=c then
 		    c = val(limit)-1
 		    i0 = 0
-		  elseif val(limit) < 0 and -val(limit)<c then
+		  elseif val(limit) < 0 and -val(limit)<=c then
 		    i0 = c+val(limit)+1
 		  end
 		  

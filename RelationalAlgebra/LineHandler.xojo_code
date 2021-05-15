@@ -619,7 +619,7 @@ Implements RelationNotifier
 		        if mode = "HTML" and true then
 		          result = result + r.ToHTML(body)
 		        else
-		          result =  result + ptag+ r.csv+text.EndOfLine
+		          result =  result + ptag+ r.ToCSV(body)+text.EndOfLine
 		        end
 		      end
 		    case "program"
@@ -842,6 +842,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
+		        r.globals = dict
 		        r.rename(body)
 		      end
 		    case "run"
@@ -862,12 +863,15 @@ Implements RelationNotifier
 		            tx = programs.value(key)
 		            
 		            dim dict2 as new Dictionary
+		            dim dict0 as new Dictionary
 		            if dict <> nil then
 		              for each e as DictionaryEntry in dict
 		                dict2.value(e.key) = e.Value
 		              next
 		            end
-		            result = run(tx,key,body,dict) // result is property 
+		            dict0 = dict
+		            result = run(tx,key,body,dict2) // result is property 
+		            dict = dict0
 		          else
 		            result = result + ptagerror+ti+" Error : Program not defined "+key+ptag2
 		            errors.Append il
@@ -1120,6 +1124,10 @@ Implements RelationNotifier
 		    errors.Append il
 		    return result
 		  Exception err as XPError
+		    result = result + ptagerror+ti+" Error : " + err.Message.totext + ""+ptag2
+		    errors.Append il
+		    return result
+		  Exception err as RegExException
 		    result = result + ptagerror+ti+" Error : " + err.Message.totext + ""+ptag2
 		    errors.Append il
 		    return result

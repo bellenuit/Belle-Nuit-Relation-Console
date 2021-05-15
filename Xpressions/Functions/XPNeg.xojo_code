@@ -11,7 +11,7 @@ Inherits XPFunction
 		  
 		  a = val(stack.Pop)
 		  
-		  stack.AddRow str(-a).totext
+		  stack.AddRow cText(-a)
 		End Sub
 	#tag EndEvent
 

@@ -9,7 +9,7 @@ Implements RelationNotifier
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Run(t as text, internal as text = "", internalbody as text = "") As text
+		Function Run(t as text, internal as text = "", internalbody as text = "", d as dictionary = nil) As text
 		  'StartProfiling
 		  
 		  dim lines(-1) as text
@@ -19,9 +19,10 @@ Implements RelationNotifier
 		  dim fields(-1) as text
 		  dim commafields(-1) as text
 		  dim i, il, c,j,k as Int64
-		  dim locals as new Dictionary
+		  dim dict as new Dictionary
+		  
 		  dim internals(-1) as text
-		  dim file as FolderItem
+		  dim file,file2 as FolderItem
 		  
 		  dim r,r2 as relation
 		  dim command as text
@@ -66,17 +67,23 @@ Implements RelationNotifier
 		  
 		  if internal = "" then
 		    programs = new Dictionary
-		    globals = new Dictionary
 		    globalrelations = new Dictionary
 		    functions = new Dictionary
 		    aggregators = new Dictionary
 		    offsets = new Dictionary
+		    transactiondict = new Dictionary
+		    transactionprefix = ""
+		    transactionerror = ""
 		    redim stack(-1)
 		    redim errors(-1)
 		  else
 		    if internalbody <> "" then
 		      internals = internalbody.split(",")
 		    end
+		  end
+		  
+		  if d<>nil then 
+		    dict = d
 		  end
 		  
 		  if t.IndexOf(chr(13).ToText)>-1 and t.IndexOf(chr(10).ToText)=-1 then
@@ -182,12 +189,14 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        if not r.assert(body) then
 		          // nothing
-		          result = result + ptagerror+ti+" Assertion error : " + body + ""+ptag2
+		          result = result + ptagerror+ti+" Assertion error : " + body +ptag2
 		          errors.Append il
+		          if transactionprefix <>"" then
+		            transactionerror = ti+" Assertion error : " + body
+		          end
 		        end if
 		      end
 		      
@@ -205,9 +214,8 @@ Implements RelationNotifier
 		      else
 		        found = false
 		        r = stack(UBound(stack))
-		        r.globals = globals
+		        r.globals = dict
 		        r.functions = functions
-		        r.locals = locals
 		        while i<c and not found
 		          i = i + 1
 		          il = il+1
@@ -247,20 +255,24 @@ Implements RelationNotifier
 		        stack.AddRow r
 		      end
 		    case "echo"
-		      locals  = new Dictionary
+		      'locals  = new Dictionary
 		      if ubound(stack) >=0 then
 		        r = stack(UBound(stack))
 		        if r.tuples.Count > 0 then
 		          au = r.tuples.value(0)
 		          if au isa Tuple then
 		            tp= tuple(au)
-		            locals = tp.fields
+		            for each e as DictionaryEntry in tp.Fields
+		              if not dict.HasKey(e.key) then
+		                dict.Value(e.key) = e.Value
+		              end
+		            next
 		          end
 		        end
 		      end
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
-		      tx =  xp.evaluate(globals,locals)
+		      tx =  xp.evaluate(dict)
 		      result = result + tx + ptag2 
 		      if tx.Length>0 then
 		        select case tx.left(1)
@@ -300,6 +312,39 @@ Implements RelationNotifier
 		          result = result + ptagerror+ti+" Error : Endif not possible here"+ptag2
 		          errors.Append il
 		        end
+		      elseif line = "end transaction" then
+		        // clean up transaction
+		        if transactionerror<>"" then
+		          result = result + ptagerror+ti+" Transaction errror: "+transactionerror+ptag2
+		          // delete all 
+		          if currentpath<>"" then
+		            for each e as DictionaryEntry in transactiondict
+		              file = new FolderItem(currentpath+e.value,folderitem.PathModes.URL,true)
+		              if file.Exists then
+		                file.Delete
+		              end
+		            next
+		          end
+		        else
+		          // copy 
+		          if currentpath<>"" then
+		            for each e as DictionaryEntry in transactiondict
+		              file = new FolderItem(currentpath+e.value,folderitem.PathModes.URL,true)
+		              if file.Exists then
+		                file2 = new FolderItem(currentpath+e.key,folderitem.PathModes.URL,true)
+		                if file2.Exists then
+		                  file2.Delete
+		                end
+		                file.moveto(file2)
+		              else
+		                result = result + ptagerror+ti+" Transaction errror: missing file "+e.value+ptag2
+		              end
+		            next
+		          end
+		        end
+		        transactionprefix = ""
+		        transactionerror =""
+		        transactiondict.RemoveAll
 		      else
 		        result = result + ptagerror+ti+" Error : End not possible here"+ptag2
 		        errors.Append il
@@ -310,8 +355,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.functions = functions
 		        r.Notifier = me
 		        r.extend(body)
@@ -365,7 +409,7 @@ Implements RelationNotifier
 		        end
 		      wend
 		      if found then
-		        fn = new XPCompiledFunction(key, Text.join(plines,chr(10).ToText),offsets.value(key))
+		        fn = new XPCompiledFunction(key, Text.join(plines,chr(10).ToText),offsets.value(key),false,Functions)
 		        functions.value(key)= fn
 		      else
 		        result = result + ptagerror+ti+" Error : Function missing end"+ptag2
@@ -375,7 +419,7 @@ Implements RelationNotifier
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
 		      ifstack.AddRow i
-		      if val(xp.evaluate(globals,locals)) <> 0 then
+		      if val(xp.evaluate(dict)) <> 0 then
 		      else
 		        loopcounter = 1
 		        while i<c and loopcounter > 0
@@ -393,10 +437,10 @@ Implements RelationNotifier
 		        wend
 		      end
 		    case "import"
-		      r = new Relation("a", locals, globals)
+		      r = new Relation("a", dict)
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
-		      tn = xp.evaluate(globals,locals)
+		      tn = xp.evaluate(dict)
 		      xp = nil
 		      if tn="" then
 		        result = result + ptagerror+ti+" Error : Empty filename"+ptag2
@@ -412,7 +456,7 @@ Implements RelationNotifier
 		          tip.Encoding = Encodings.UTF8
 		          tx = tip.ReadAll.ToText
 		          if tx<>"" then
-		            r = new Relation("",locals, globals)
+		            r = new Relation("",dict)
 		            r.import(tx,tn)
 		            stack.AddRow r
 		          else
@@ -426,10 +470,10 @@ Implements RelationNotifier
 		      end
 		    case "include"
 		      
-		      r = new Relation("",locals, globals)
+		      r = new Relation("",dict)
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
-		      tn = xp.evaluate(globals,locals)
+		      tn = xp.evaluate(dict)
 		      xp = nil
 		      if tn="" then tn=" "
 		      if not ValidFileName(tn.Replace(".rel","")) then
@@ -476,8 +520,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.functions = functions
 		        r.Insert(body)
 		      end
@@ -497,8 +540,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack.Pop
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.functions = functions
 		        r.Notifier = me
 		        r2 = stack.pop
@@ -524,8 +566,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.functions = functions
 		        r.limit(body)
 		      end
@@ -547,7 +588,7 @@ Implements RelationNotifier
 		        tx = internals(0).trim
 		        xp = new XPEvaluator(functions)
 		        xp.Compile(tx)
-		        locals.value(body.Trim) = xp.evaluate(globals)
+		        dict.value(body.Trim) = xp.evaluate(dict)
 		        xp = nil
 		        internals.RemoveRowAt 0
 		      end
@@ -557,8 +598,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.functions = functions
 		        r.parse(body)
 		      end
@@ -634,14 +674,13 @@ Implements RelationNotifier
 		        r = stack(UBound(stack))
 		        r.aggregators = aggregators
 		        r.functions = functions
-		        r.globals = Globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.Notifier = me
 		        r.project(body)
 		        r.Notifier = nil
 		      end
 		    case "read"
-		      r = new Relation("",locals, globals)
+		      r = new Relation("",dict)
 		      dim enc as text
 		      enc = "utf8"
 		      
@@ -670,7 +709,7 @@ Implements RelationNotifier
 		      
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
-		      tn = xp.evaluate(globals,locals)
+		      tn = xp.evaluate(dict)
 		      xp = nil
 		      if tn="" then tn=" "
 		      if not ValidFileName(tn.Replace(".csv","").Replace(".txt","").Replace(".json","")) then
@@ -686,12 +725,16 @@ Implements RelationNotifier
 		          else
 		            result = result + ptagerror+ti+" Error : Relation does not exist "+tn+ptag2
 		            errors.Append il
-		            r = new Relation("",locals, globals)
+		            r = new Relation("",dict)
 		          end
 		          stack.AddRow r.clone
 		        elseif currentpath<>"" then
 		          
+		          if transactiondict.HasKey(tn) then
+		            tn = transactiondict.value(tn)
+		          end
 		          file = new FolderItem(currentpath+tn,folderitem.PathModes.URL,true)
+		          
 		          if not file.Exists then
 		            result = result + ptagerror+ti+" Error : File does not exist"+ptag2
 		            errors.Append il
@@ -747,7 +790,7 @@ Implements RelationNotifier
 		                  end
 		                #EndIf
 		                'tx = tip.ReadAll.ToText
-		                r = new Relation("",locals, globals)
+		                r = new Relation("",dict)
 		                r.Notifier = me
 		                r.SetCSV readlines, csvpad
 		                stack.AddRow r
@@ -758,7 +801,7 @@ Implements RelationNotifier
 		                redim readlines(-1) 
 		              case ".txt"
 		                tx = tip.ReadAll.ToText
-		                r = new Relation("",locals, globals)
+		                r = new Relation("",dict)
 		                r.tab = tx
 		                stack.AddRow r
 		                #if TargetDesktop
@@ -767,7 +810,7 @@ Implements RelationNotifier
 		              else
 		                tx = tip.ReadAll.ToText
 		                if right(tn,5)=".json" then
-		                  r = new Relation("",locals, globals)
+		                  r = new Relation("",dict)
 		                  r.JSON = tx
 		                  stack.AddRow r
 		                  #if TargetDesktop
@@ -791,7 +834,7 @@ Implements RelationNotifier
 		        'end
 		      end
 		    case "relation"
-		      r = new relation(body,locals, globals)
+		      r = new relation(body,dict)
 		      stack.AddRow r
 		    case "rename"
 		      if ubound(stack) < 0 then
@@ -817,7 +860,14 @@ Implements RelationNotifier
 		          body = body.mid(1,len(body)-2)
 		          if programs.HasKey(key) then
 		            tx = programs.value(key)
-		            result = run(tx,key,body) // result is property 
+		            
+		            dim dict2 as new Dictionary
+		            if dict <> nil then
+		              for each e as DictionaryEntry in dict
+		                dict2.value(e.key) = e.Value
+		              next
+		            end
+		            result = run(tx,key,body,dict) // result is property 
 		          else
 		            result = result + ptagerror+ti+" Error : Program not defined "+key+ptag2
 		            errors.Append il
@@ -830,8 +880,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.functions = functions
 		        r.Notifier = me
 		        r.Select1(body)
@@ -846,14 +895,18 @@ Implements RelationNotifier
 		        r.Serialize
 		      end
 		    case "set"
-		      locals  = new Dictionary
+		      'locals  = new Dictionary
 		      if ubound(stack) >=0 then
 		        r = stack(UBound(stack))
 		        if r.tuples.Count > 0 then
 		          au = r.tuples.value(0)
 		          if au isa Tuple then
 		            tp= tuple(au)
-		            locals = tp.fields
+		            for each e as DictionaryEntry in tp.Fields
+		              if not dict.HasKey(e.key) then
+		                dict.Value(e.key) = e.Value
+		              end
+		            next
 		          end
 		        end
 		      end
@@ -869,10 +922,10 @@ Implements RelationNotifier
 		      body = Text.join(fields," ").trim
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
-		      globals.value(key) = xp.evaluate(globals,locals)
+		      dict.value(key) = xp.evaluate(dict)
 		      xp = nil
 		    case "stack"
-		      r = new relation("stack, cardinality, column", locals, globals)
+		      r = new relation("stack, cardinality, column", dict)
 		      dim sti, stc, ci as int32
 		      for sti = 0 to ubound(stack)
 		        r2 = stack(sti)
@@ -903,7 +956,7 @@ Implements RelationNotifier
 		        r = stack.Pop
 		        xp = new XPEvaluator(functions)
 		        xp.Compile(body)
-		        tn = xp.evaluate(globals,locals)
+		        tn = xp.evaluate(dict)
 		        xp = nil
 		        if tn="" then tn=" "
 		        if not ValidFileName(tn.Replace(".txt","")) then
@@ -938,6 +991,9 @@ Implements RelationNotifier
 		        end
 		        stack.AddRow r
 		      end
+		    case "transaction"
+		      transactionprefix = "tmp-"
+		      transactionerror = ""
 		    case "union"
 		      if ubound(stack) < 1 then
 		        result = result + ptagerror+ti+" Error : Stack empty"+ptag2
@@ -954,8 +1010,7 @@ Implements RelationNotifier
 		        errors.Append il
 		      else
 		        r = stack(UBound(stack))
-		        r.globals = globals
-		        r.locals = locals
+		        r.globals = dict
 		        r.functions = functions
 		        r.Notifier = me
 		        r.update(body)
@@ -964,7 +1019,7 @@ Implements RelationNotifier
 		    case "while"
 		      xp = new XPEvaluator(functions)
 		      xp.Compile(body)
-		      if val(xp.evaluate(globals,locals)) <> 0 then
+		      if val(xp.evaluate(dict)) <> 0 then
 		        whilestack.AddRow i
 		      else
 		        //whilestack.RemoveRowAt(UBound(whilestack))
@@ -987,7 +1042,12 @@ Implements RelationNotifier
 		        r = stack(UBound(stack))
 		        xp = new XPEvaluator(functions)
 		        xp.Compile(body)
-		        tn = xp.evaluate(globals,locals)
+		        tn = xp.evaluate(dict)
+		        if transactionprefix <> "" then
+		          transactiondict.Value(tn) = transactionprefix+tn
+		          tn = transactionprefix+tn
+		        end
+		        
 		        xp = nil
 		        if not ValidFileName(tn.trim.Replace(".csv","").Replace(".txt","").Replace(".json","")) then
 		          result = result + ptagerror+ti+" Error : Invalid filename "+tn+ptag2
@@ -996,7 +1056,7 @@ Implements RelationNotifier
 		          if tn="" then
 		            result = result + ptagerror+ti+" Error : Empty filename"+ptag2
 		            errors.Append il
-		          elseif currentpath<>"" then
+		          elseif currentpath<>"" or tn.IndexOf(".") = -1 then
 		            file = new FolderItem(currentpath+tn,folderitem.PathModes.URL,true)
 		            dim tout as TextOutputStream
 		            select case right(tn,4)
@@ -1153,10 +1213,6 @@ Implements RelationNotifier
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		globals As Dictionary
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
 		interactive As boolean
 	#tag EndProperty
 
@@ -1186,6 +1242,18 @@ Implements RelationNotifier
 
 	#tag Property, Flags = &h0
 		stack() As Relation
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		transactiondict As Dictionary
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		transactionerror As text
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		transactionprefix As text
 	#tag EndProperty
 
 
@@ -1248,6 +1316,22 @@ Implements RelationNotifier
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Result"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="text"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="transactionprefix"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="text"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="transactionerror"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""

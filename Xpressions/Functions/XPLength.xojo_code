@@ -15,7 +15,7 @@ Inherits XPFunction
 		  
 		  
 		  
-		  stack.AddRow str(a.length).ToText
+		  stack.AddRow cText(a.length)
 		End Sub
 	#tag EndEvent
 

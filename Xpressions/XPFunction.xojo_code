@@ -1,35 +1,11 @@
 #tag Class
 Protected Class XPFunction
-	#tag Method, Flags = &h1
-		Protected Function cText(d as Double) As text
-		  // double is guranteed 15 decimal digits
-		  // show 15 first digits and cut 0 at the end
-		  // move to scientific only if the number cannot be represented (bigger > 10^15, smaller 10^15)
-		  
-		  dim a as double
-		  dim t as text
-		  dim s as string
-		  
-		  a = abs(d)
+	#tag Method, Flags = &h0
+		Function cText(d as Double) As text
+		  // 15 digits internally
+		  return format(d,"-0.00000000000000e").ToText
 		  
 		  
-		  
-		  if a > 10e14 then
-		    return format(d,"-0.00000000000000e").ToText
-		  elseif a < 10e-300 then
-		    return "0"
-		  elseif a < 10e-14 then
-		    return format(d,"-0.00000000000000e").ToText
-		  end
-		  
-		  s = format(d,"-0.##############")
-		  if len(s)>15 then
-		    s = format(round(d*10000000000000000)/10000000000000000,"-0.##############")
-		  end
-		  if right(s,1)="." then
-		    s = mid(s,1,len(s)-1)
-		  end
-		  return s.ToText
 		  
 		  
 		End Function

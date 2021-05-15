@@ -96,7 +96,7 @@ Protected Module TextExtensions
 		  start = true
 		  
 		  r = new regex
-		  r.SearchPattern = "^[+-]?\d(\.\d+)?[Ee][+-]?\d+$"
+		  r.SearchPattern = "^[+-]?\d+(.\d+)?([eE][+-]?\d+)?$"
 		  
 		  if r.Search(t) <> nil then
 		    return true
@@ -105,18 +105,6 @@ Protected Module TextExtensions
 		  end
 		  
 		  
-		  For Each c As Text In t.Characters
-		    select case c
-		    case "0" to "9"
-		    case "."
-		      if start then return false
-		      if hasperiod then return false
-		      hasperiod = true
-		    else
-		      return false
-		    end
-		    start = false
-		  Next
 		  
 		  return true
 		  

@@ -254,31 +254,49 @@ Protected Class XPEvaluator
 		  dim t as text
 		  dim s as string
 		  
-		  a = abs(d)
+		  dim r as regex
 		  
+		  a = d
 		  
-		  if a > 10e12 then
-		    return format(d,"-0.000000000000e").ToText
-		  elseif a < 10e-12 then
-		    return format(d,"-0.000000000000e").ToText
+		  if abs(a) < 1e-99 then
+		    t = "0"
+		  elseif a >= 1e100 then
+		    t = "INF"
+		  elseif a <= -1e100 then
+		    t = "-INF"
+		  elseif abs(a) >= 1e10 or abs(a) < 1e-9 then
+		    t = format(a,"-0.000000000e").ToText
+		    r = new regex
+		    r.SearchPattern = "\.?0+(e[+-]?\d+)$"
+		    r.ReplacementPattern = "$1"
+		    t = r.Replace(t).totext
+		  else
+		    // round to 10 digits and remove trailing 0
+		    // a = xojo.math.round(d*1000000000000)/1000000000000
+		    t = format(a,"-0.000000000").totext
+		    if t.Length > 11 then
+		      t = t.left(11)
+		      if right(t,1) = "." then
+		        t = t.left(t.length-1)
+		      end
+		    end
+		    if t.IndexOf(".")>-1 then
+		      r = new regex
+		      r.SearchPattern = "\.?0+$"
+		      r.ReplacementPattern = ""
+		      t = r.Replace(t).totext
+		    end
 		  end
 		  
-		  s = format(d,"-0.############")
-		  if len(s)>12 then
-		    s = format(round(d*10000000000000)/10000000000000,"-0.############")
-		  end
-		  if right(s,1)="." then
-		    s = mid(s,1,len(s)-1)
-		  end
-		  t = s.ToText
-		  if t = "0.000000000000e+0" then return "0" else return t
+		  return t 
+		  
 		  
 		  
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Evaluate(values as dictionary, globals as dictionary = nil, locals as Dictionary = nil) As text
+		Function Evaluate(values as dictionary, globals as dictionary = nil) As text
 		  
 		  dim e,e2 as text
 		  dim ch, dummy as text
@@ -435,18 +453,14 @@ Protected Class XPEvaluator
 		          e = localdict.value(e2)
 		        elseif values.HasKey(e2) then
 		          e = values.value(e2)
-		        elseif locals <> nil and locals.HasKey(e2) then
-		          e = locals.value(e2)
 		        elseif globals <> nil and globals.HasKey(e2) then
 		          e = globals.value(e2)
 		        end
 		      end
-		      if localdict.HasKey(e) then
-		        stack.AddRow localdict.value(e)
-		      elseif values.HasKey(e) then
+		      if values<>nil and values.HasKey(e) then
 		        stack.AddRow values.value(e)
-		      elseif locals <> nil and locals.HasKey(e) then
-		        stack.AddRow locals.value(e)
+		      elseif localdict.HasKey(e) then
+		        stack.AddRow localdict.value(e)
 		      elseif globals <> nil and globals.HasKey(e) then
 		        stack.AddRow globals.value(e)
 		      else
@@ -471,6 +485,7 @@ Protected Class XPEvaluator
 		  'end
 		  
 		  result = stack(0)
+		  
 		  
 		  if result.IsNumeric then
 		    result = cText12(val(result))

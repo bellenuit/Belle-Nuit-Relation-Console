@@ -16,7 +16,7 @@ Inherits XPFunction
 		    raise new xperror("div/0",110)
 		  end
 		  
-		  stack.AddRow str(b mod a).ToText
+		  stack.AddRow cText(b mod a)
 		End Sub
 	#tag EndEvent
 

@@ -117,7 +117,9 @@ Inherits XPFunction
 		      fields.RemoveRowAt 0
 		      body = Text.join(fields," ").trim
 		      if body <> "" then
-		        xp = new XPEvaluator
+		        if xp = nil then
+		          xp = new XPEvaluator
+		        end
 		        xp.Compile(body)
 		        for each ti in xp.rpn
 		          compiledlines.AddRow ti
@@ -168,7 +170,9 @@ Inherits XPFunction
 		                compiledlines.append str(j+offset+1).ToText
 		                compiledlines.append ":gotoifn"
 		              else
-		                xp = new XPEvaluator
+		                if xp = nil then
+		                  xp = new XPEvaluator
+		                end
 		                xp.Compile(body)
 		                for each ti in xp.rpn
 		                  compiledlines.AddRow ti
@@ -253,7 +257,7 @@ Inherits XPFunction
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(lb as text, source as text, off as int64, ia as boolean = false)
+		Sub Constructor(lb as text, source as text, off as int64, ia as boolean = false, fdict as Dictionary = nil)
 		  isAggregator = ia
 		  
 		  lines = source.split(chr(10).ToText)
@@ -261,7 +265,7 @@ Inherits XPFunction
 		  
 		  label = ":"+lb
 		  
-		  xp = new XPEvaluator
+		  xp = new XPEvaluator(fdict)
 		  
 		  compile
 		  
@@ -281,7 +285,9 @@ Inherits XPFunction
 		  dim localvalues as new Dictionary
 		  dim t as text
 		  
-		  if xp = nil then xp = new XPEvaluator
+		  if xp = nil then 
+		    xp = new XPEvaluator
+		  end
 		  
 		  xp.rpn = me.compiledlines
 		  

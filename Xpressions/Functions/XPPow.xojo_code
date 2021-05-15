@@ -12,7 +12,7 @@ Inherits XPFunction
 		  a = val(stack.Pop)
 		  b = val(stack.Pop)
 		  
-		  stack.AddRow str(pow(b,a)).totext
+		  stack.AddRow cText(pow(b,a))
 		End Sub
 	#tag EndEvent
 

@@ -66,7 +66,7 @@ Protected Class Relation
 		      else
 		        raise new RelationError("assert illegal tuple",605)
 		      end
-		      if xp.evaluate(d,globals,locals) = "0" then
+		      if xp.evaluate(d,globals) = "0" then
 		        return false
 		      end
 		    next
@@ -80,7 +80,7 @@ Protected Class Relation
 		      else
 		        raise new RelationError("assert illegal tuple",605)
 		      end
-		      if xp.evaluate(d,globals,locals) <> "0" then
+		      if xp.evaluate(d,globals) <> "0" then
 		        return true
 		      end
 		    next
@@ -95,7 +95,7 @@ Protected Class Relation
 		      else
 		        raise new RelationError("assert illegal tuple",605)
 		      end
-		      s = xp.evaluate(d,globals,locals)
+		      s = xp.evaluate(d,globals)
 		      if test.HasKey(s) then return false
 		      test.value(s) = true
 		    next
@@ -152,7 +152,7 @@ Protected Class Relation
 
 	#tag Method, Flags = &h0
 		Function Clone() As Relation
-		  dim result as new Relation(header,locals, globals)
+		  dim result as new Relation(header, globals)
 		  dim i, c as integer
 		  
 		  result.tuples = tuples.Clone
@@ -169,11 +169,10 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(columns() as text, l as Dictionary, g as Dictionary)
+		Sub Constructor(columns() as text, g as Dictionary)
 		  dim s as text
 		  
 		  // should check valid names
-		  locals = l
 		  globals = g
 		  
 		  for each s in columns
@@ -187,12 +186,12 @@ Protected Class Relation
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(t as Text, l as Dictionary, g as Dictionary)
+		Sub Constructor(t as Text, g as Dictionary)
 		  dim pairs(-1) as text
 		  if t<>"" then
 		    pairs = t.Split(",")
 		  end
-		  Constructor pairs, l, g
+		  Constructor pairs, g
 		End Sub
 	#tag EndMethod
 
@@ -240,7 +239,7 @@ Protected Class Relation
 		  
 		  order(header(0))
 		  
-		  r = new Relation("",locals, globals)
+		  r = new Relation("", globals)
 		  r.AddColumn(header(0))
 		  
 		  n = tuples.Count-1
@@ -405,8 +404,8 @@ Protected Class Relation
 		    else
 		      raise new XPError("Extend Illegal tuple",601)
 		    end
-		    locals.Value(rownumberlabel) = str(i+1).totext
-		    v = xp.evaluate(d,globals,locals)
+		    d.Value(rownumberlabel) = str(i+1).totext
+		    v = xp.evaluate(d,globals)
 		    d.value(label) = v
 		    tp = new tuple(d)
 		    newtuples.setvalue tp.hash, tp
@@ -608,7 +607,7 @@ Protected Class Relation
 		  xp = new XPEvaluator(functions)
 		  xp.expectedreturn =  header.Count
 		  xp.Compile(t)
-		  test = xp.evaluate(globals,locals)
+		  test = xp.evaluate(globals)
 		  while xp.stack.count>0 
 		    pairs.AddRow xp.stack(0)
 		    xp.stack.RemoveRowAt 0
@@ -835,7 +834,7 @@ Protected Class Relation
 		          end
 		        next
 		      else
-		        tx = xp.evaluate(d1,globals,locals)
+		        tx = xp.evaluate(d1,globals)
 		        for each cf as text in commonheader
 		          d1.value(cf) = d1.value(cf+"_1")
 		          d1.Remove(cf+"_1")
@@ -1197,7 +1196,7 @@ Protected Class Relation
 		  xp = new XPEvaluator(functions)
 		  xp.expectedreturn = 2
 		  xp.Compile(t)
-		  pairs.addrow xp.evaluate(globals,locals)
+		  pairs.addrow xp.evaluate(globals)
 		  if xp.stack.count>1 then
 		    pairs.AddRow xp.stack(1)
 		  end
@@ -1670,8 +1669,8 @@ Protected Class Relation
 		    else
 		      raise new XPError("Select Illegal tuple",601)
 		    end
-		    locals.Value(rownumberlabel) = str(i+1).totext
-		    result = xp.evaluate(d,globals,locals)
+		    d.Value(rownumberlabel) = str(i+1).totext
+		    result = xp.evaluate(d,globals)
 		    if result= "0" then
 		      tuples.Remove i
 		    end
@@ -1712,7 +1711,7 @@ Protected Class Relation
 		  if list2(0)="key" then list2(0) = "key0"
 		  if list2(0)="value" then list2(0) = "value0"
 		  
-		  r = new relation(list2,locals, globals)
+		  r = new relation(list2,globals)
 		  
 		  m = tuples.count-1
 		  for j = 0 to m
@@ -2355,9 +2354,9 @@ Protected Class Relation
 		    else
 		      raise new XPError("Update Illegal tuple",601)
 		    end
-		    if xpc.Evaluate(d,globals,locals) = "1" then
-		      locals.Value(rownumberlabel) = str(i+1).totext
-		      v = xp.evaluate(d,globals,locals)
+		    if xpc.Evaluate(d,globals) = "1" then
+		      d.Value(rownumberlabel) = str(i+1).totext
+		      v = xp.evaluate(d,globals)
 		      d.value(label) = v
 		      tp = new tuple(d)
 		    else
@@ -2382,9 +2381,6 @@ Protected Class Relation
 		  
 		  if t.right(1) = "^" then
 		    t2 = t.left(t.length-1)
-		    if locals <> nil and locals.HasKey(t2) then
-		      return validname(locals.value(t2))
-		    end
 		    if globals <> nil and globals.HasKey(t2) then
 		      return validname(globals.value(t2))
 		    end
@@ -2452,8 +2448,7 @@ Protected Class Relation
 			          test = format2(val(test),fm).ToText
 			        end
 			      end
-			      'if test.IsNumeric then
-			      if IsNumeric(test) then
+			      if test.IsNumeric then
 			        fields.AddRow test
 			      else
 			        fields.AddRow Quote + test.ReplaceAll(Quote,Quote+Quote) + Quote
@@ -2610,10 +2605,6 @@ Protected Class Relation
 
 	#tag Property, Flags = &h0
 		labels As Dictionary
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
-		locals As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

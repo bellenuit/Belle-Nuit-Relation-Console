@@ -11,6 +11,7 @@ Inherits ConsoleApplication
 		  dim history(-1) as text
 		  dim lines(-1) as text
 		  dim found, done as boolean
+		  dim dict as new Dictionary
 		  
 		  StdOut.WriteLine("Belle Nuit Relation console")
 		  
@@ -26,7 +27,7 @@ Inherits ConsoleApplication
 		      elseif left(arg,1) = "-" then
 		        state = arg.ToText.mid(1)
 		      elseif state <> "" then
-		        lh.globals.Value(state) = arg.ToText
+		        dict.Value(state) = arg.ToText
 		      end
 		    end
 		  next
@@ -41,7 +42,7 @@ Inherits ConsoleApplication
 		      tip = TextInputStream.Open(file)
 		      tip.Encoding = Encodings.UTF8
 		      t = tip.ReadAll.ToText
-		      result = lh.run(t)
+		      result = lh.run(t,"","",dict)
 		      
 		      StdOut.WriteLine(result)
 		    else
@@ -51,7 +52,7 @@ Inherits ConsoleApplication
 		    lh.interactive = true
 		    // interactive 
 		    // hack to get lh first run
-		    result = lh.run(t)
+		    result =  lh.run(t,"","",dict)
 		    t ="_int"
 		    lh.offsets.value(t) = 0
 		    while not done
@@ -81,7 +82,7 @@ Inherits ConsoleApplication
 		        history.AddRow t
 		        t = t.ReplaceAll(" ; ",text.EndOfLine)
 		        lh.Result=""
-		        result = lh.run(t,"_int")
+		        result = lh.run(t,"_int","",dict)
 		        if left(t,4)="echo" and result.right(2) =text.EndOfLine+text.EndOfLine then
 		          result = result.mid(0,result.length-1)
 		        end

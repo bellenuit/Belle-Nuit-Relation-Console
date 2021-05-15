@@ -9,7 +9,7 @@ Inherits XPFunction
 		  
 		  system.Random.seed = system.Microseconds
 		  r = system.Random
-		  stack.AddRow str(r.number).ToText
+		  stack.AddRow cText(r.number)
 		End Sub
 	#tag EndEvent
 

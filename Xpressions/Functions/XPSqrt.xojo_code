@@ -17,7 +17,7 @@ Inherits XPFunction
 		  
 		  
 		  
-		  stack.AddRow str(sqrt(a)).ToText
+		  stack.AddRow cText(sqrt(a))
 		End Sub
 	#tag EndEvent
 
